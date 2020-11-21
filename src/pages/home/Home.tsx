@@ -27,6 +27,14 @@ const Home: React.FC = () => {
 
   const onElementClick = (event: React.MouseEvent<Element, MouseEvent>, element: FlowElement) => {
     console.log(event, element)
+    setElements([
+        ...elements,
+        {
+         ...elements[0],
+         id: elements.length.toString(),
+         position: { x: 150, y: 0 },
+        }
+    ])
   }
 
   return (
