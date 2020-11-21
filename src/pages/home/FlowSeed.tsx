@@ -31,6 +31,7 @@ const initialElement: Elements = [
       label: (
         <>
           This one has a <strong>custom style</strong>
+          <button onClick={() => alert("Clicked")}>Hello</button>
         </>
       ),
     },

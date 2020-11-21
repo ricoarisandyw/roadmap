@@ -10,6 +10,7 @@ import ReactFlow, {
   Edge,
   Connection,
   OnLoadParams,
+  FlowElement,
 } from 'react-flow-renderer';
 import initialElements from './FlowSeed';
 
@@ -24,8 +25,12 @@ const Home: React.FC = () => {
   const onElementsRemove = (elementsToRemove: Elements) => setElements((els) => removeElements(elementsToRemove, els));
   const onConnect = (params: Edge | Connection) => setElements((els) => addEdge(params, els));
 
+  const onElementClick = (event: React.MouseEvent<Element, MouseEvent>, element: FlowElement) => {
+    console.log(event, element)
+  }
+
   return (
-    <div className="fullscreen">
+    <div className="fullscreen m-5">
         <ReactFlow
             elements={elements}
             onElementsRemove={onElementsRemove}
@@ -33,21 +38,10 @@ const Home: React.FC = () => {
             onLoad={onLoad}
             snapToGrid={true}
             snapGrid={[15, 15]}
+            onElementClick={onElementClick}
+            nodesDraggable={false}
+            nodesConnectable={false}
         >
-            <MiniMap
-            nodeStrokeColor={(n) => {
-                if (n.style?.background) return n.style.background as string;
-                if (n.type === 'input') return '#0041d0';
-                if (n.type === 'output') return '#ff0072';
-                if (n.type === 'default') return '#1a192b';
-                return '#eee';
-            }}
-            nodeColor={(n) => {
-                if (n.style?.background) return n.style.background as string;
-                return '#fff';
-            }}
-            nodeBorderRadius={2}
-            />
             <Controls />
             <Background color="#aaa" gap={16} />
         </ReactFlow>
