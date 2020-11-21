@@ -1,0 +1,32 @@
+{
+    "root": true,
+    "parser": "@typescript-eslint/parser", // specify eslint parser
+    "plugins": [
+      "@typescript-eslint"
+    ],
+    "extends": [
+      "eslint:recommended",
+      "plugin:react/recommended",
+      "plugin:@typescript-eslint/eslint-recommended",
+      "plugin:@typescript-eslint/recommended"
+    ],
+    "rules": {
+      "no-console":"warn",
+      "no-alert":"warn",
+      "no-process-env":"warn",
+      "react/jsx-pascal-case":"warn"
+    },
+    "env": {
+      "browser": true,
+      "node": true,
+      "commonjs": true,
+      "jest": true
+    },
+    "settings": {
+      "import/resolver": {
+        "node": {
+          "extensions": [".js", ".jsx", ".ts", ".tsx"]
+        }
+      }
+    }
+}

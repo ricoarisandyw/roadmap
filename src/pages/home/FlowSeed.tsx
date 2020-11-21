@@ -1,7 +1,7 @@
 import React from 'react';
-import { ArrowHeadType, Elements } from 'react-flow-renderer';
+import { ArrowHeadType, FlowElement } from 'react-flow-renderer';
 
-const initialElement: Elements = [
+const initialElement: FlowElement[] = [
   {
     id: '1',
     type: 'input',
@@ -31,7 +31,7 @@ const initialElement: Elements = [
       label: (
         <>
           This one has a <strong>custom style</strong>
-          <button onClick={() => alert("Clicked")}>Hello</button>
+          <button onClick={() => alert("Clicked")}>Bellow</button>
         </>
       ),
     },
