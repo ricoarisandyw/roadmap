@@ -1,0 +1,48 @@
+{
+    "presets": [
+        "@babel/react",
+        "@babel/typescript",
+        [
+            "@babel/env",
+            {
+                "debug": false,
+                "modules": false,
+                "useBuiltIns": false
+            }
+        ]
+    ],
+    "plugins": [
+        [
+            "@babel/plugin-transform-runtime",
+            {
+                "helpers": true,
+                "regenerator": true
+            }
+        ],
+        "syntax-dynamic-import",
+        "transform-async-to-generator",
+        [
+            "@babel/plugin-proposal-object-rest-spread",
+            { "loose": true, "useBuiltIns": true }
+        ],
+        ["@babel/plugin-transform-arrow-functions", { "spec": true }],
+        ["@babel/plugin-proposal-class-properties", { "loose": true }],
+        "@babel/plugin-proposal-optional-chaining",
+        "react-hot-loader/babel"
+    ],
+    "env": {
+        "test": {
+            "presets": [
+                "@babel/react",
+                "@babel/typescript",
+                [
+                    "@babel/env",
+                    {
+                        "modules": "commonjs"
+                    }
+                ]
+            ],
+            "plugins": ["@babel/plugin-transform-modules-commonjs"]
+        }
+    }
+}
