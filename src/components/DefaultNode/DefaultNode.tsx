@@ -1,10 +1,10 @@
 import React, { useState } from 'react'
+import ActionType from './ActionType'
 import './DefaultNode.scss'
 
 interface DefaultNodeProps {
     label: string;
-    onAddHorizon: () => void;
-    onAddVertical: () => void;
+    onMenuSelected: (action: string) => void;
 }
 
 const DefaultNode: React.FC<DefaultNodeProps> = (props: DefaultNodeProps) => {
@@ -19,16 +19,16 @@ const DefaultNode: React.FC<DefaultNodeProps> = (props: DefaultNodeProps) => {
                 </div>
             </div>
             <div className={["shadow bg-light menu", showMenu ? "": "d-none"].join(' ')}>
-                <div className="item">
+                <div className="item" onClick={(): void => props.onMenuSelected(ActionType.ADD_CHECKLIST)}>
                     Add Checklist
                 </div>
-                <div className="item">
+                <div className="item" onClick={(): void => props.onMenuSelected(ActionType.ADD_GROUP)}>
                     Add Group
                 </div>
-                <div className="item">
+                <div className="item" onClick={(): void => props.onMenuSelected(ActionType.COLLAPSE)}>
                     Collapse
                 </div>
-                <div className="item-danger">
+                <div className="item-danger" onClick={(): void => props.onMenuSelected(ActionType.DELETE)}>
                     Delete
                 </div>
                 <div className="item" onClick={(): void => setShowMenu(false)}>

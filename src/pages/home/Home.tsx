@@ -22,12 +22,8 @@ const Home: React.FC = () => {
   const [selectedElement, setSelectedElement] = useState<FlowElement>() 
   const [action, setAction] = useState("")
 
-  const onAddHorizontal = (): void => {
-    setAction("ADD_HORIZONTAL")
-  }
-
-  const onAddVertical = (): void => {
-    setAction("ADD_VERTICAL")
+  const onMenuSelected = (action: string): void => {
+    setAction(action)
   }
 
   const onElementsRemove = (elementsToRemove: Elements): void => setElements((els) => removeElements(elementsToRemove, els));
@@ -46,7 +42,7 @@ const Home: React.FC = () => {
       },
       data: {
         label: (
-          <DefaultNode label="1" onAddHorizon={onAddHorizontal} onAddVertical={onAddVertical} />
+          <DefaultNode label="1" onMenuSelected={onMenuSelected} />
         )
       }
   }])
@@ -54,35 +50,45 @@ const Home: React.FC = () => {
 
   const realAction = (): void => {
     const element = selectedElement as {[key: string]: any}
-    if(action === "ADD_HORIZONTAL")
+    console.log(element['position'], action)
+    if(action === "ADD_GROUP")
       setElements([
         ...elements,
         {
           id: (elements.length + 1).toString(),
           data: {
-            label: <DefaultNode label={(elements.length + 1) + " child of "+selectedElement?.id} onAddHorizon={onAddHorizontal} onAddVertical={onAddVertical} />
-          },
+            label: <DefaultNode label={(elements.length + 1) + " child of "+selectedElement?.id} onMenuSelected={onMenuSelected} />
+          },          
           position: {
-            x: element['position'].x + 200,
+            x: element['position'].x + 260,
             y: element['position'].y,
-          }
+          },
+        },
+        {
+          id: "e" +(elements.length + 1).toString(),
+          source: selectedElement?.id.toString() || "",
+          target: (elements.length + 1).toString(),
+          type: 'smoothstep',
         }
       ])
-    else if (action === "ADD_VERTICAL")
+    else if (action === "ADD_CHECKLIST")
       setElements([
         ...elements,
         {
           id: (elements.length + 1).toString(),
           data: {
-            label: <DefaultNode label={(elements.length + 1) + " child of "+selectedElement?.id} onAddHorizon={onAddHorizontal} onAddVertical={onAddVertical} />
+            label: <DefaultNode label={(elements.length + 1) + " child of "+selectedElement?.id} onMenuSelected={onMenuSelected} />
           },          
           position: {
             x: element['position'].x,
-            y: element['position'].y + 200,
+            y: element['position'].y + 140,
           },
-          style: {
-            width: "500px"
-          }
+        },
+        {
+          id: "e" + (elements.length + 1).toString(),
+          source: selectedElement?.id.toString() || "",
+          target: (elements.length + 1).toString(),
+          type: 'smoothstep',
         }
       ])
 
