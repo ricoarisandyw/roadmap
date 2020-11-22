@@ -56,9 +56,6 @@ const DefaultNode: React.FC<DefaultNodeProps> = (props: DefaultNodeProps) => {
                 <div className="item" onClick={(): void => onMenuSelected(ActionType.ADD_CHECKLIST)}>
                     Add Checklist
                 </div>
-                <div className="item" onClick={(): void => onMenuSelected(ActionType.ADD_GROUP)}>
-                    Add Group
-                </div>
                 <div className="item" onClick={(): void => onMenuSelected(ActionType.COLLAPSE)}>
                     Collapse
                 </div>

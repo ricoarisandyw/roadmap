@@ -31,6 +31,12 @@ const Home: React.FC = () => {
         setAction(actionType)
     }
 
+    const onClose = (): void => {
+        setShowModal(false)
+        setAction('')
+        setSelectedElement(undefined)
+    }
+
     const onElementsRemove = (elementsToRemove: Elements): void =>
         setElements((els) => removeElements(elementsToRemove, els))
     const onConnect = (params: Edge | Connection): void => setElements((els) => addEdge(params, els))
@@ -58,25 +64,94 @@ const Home: React.FC = () => {
         ])
     }, [])
 
-    const realAction = (): void => {
-        if (action === ActionType.ADD_CHECKLIST || action === ActionType.ADD_GROUP || action === ActionType.DETAIL) {
-            setShowModal(true)
-        } else {
-            window.alert(`Action ${action} will be available later`)
-        }
-    }
-
-    const onClose = (): void => {
-        setShowModal(false)
-        setAction('')
-        setSelectedElement(undefined)
-    }
-
     const findChildren = (id: string): FlowElement[] => {
-        return elements.filter((elm) => {
+        const childrenEdge = elements.filter((elm) => {
             const split = elm.id.split('-')
             return elm.id.includes('-') && split.length > 1 && split[0] === id
         })
+        const children: FlowElement[] = []
+        childrenEdge.forEach((edge) => {
+            const foundChild = elements.find((elm) => elm.id === edge.id.split('-')[1])
+            if (foundChild) children.push(foundChild)
+        })
+        return children
+    }
+
+    const findParentById = (id: string): FlowElement | undefined => {
+        const parentEdge = elements.find((elm) => elm.id.includes('-') && elm.id.split('-')[1] === id)
+        if (parentEdge) {
+            const parent = elements.find((elm) => elm.id === parentEdge.id.split('-')[0])
+            return parent
+        }
+        return undefined
+    }
+
+    const updateCheck = (): void => {
+        // update parent first
+        const element = selectedElement as {[key: string]: any}
+        const parent = findParentById(element.id) as {[key: string]: any}
+        const exceptSelectedAndParent = elements.filter((elm) => elm.id !== element.id && elm.id !== parent.id)
+
+        const updatedNode = {
+            ...element,
+            id: element.id,
+            data: {
+                label: element.data.label,
+                value: {
+                    ...element.data.value.label,
+                    checked: !element.data.value.checked,
+                },
+            },
+            position: {
+                x: element.position.x,
+                y: element.position.y,
+            },
+        }
+
+        if (parent) {
+            const children = findChildren(parent.id)
+            const completeChildren = children.filter((child) => {
+                return child.data && child.data.value && child.data.value.checked && child.id !== element.id
+            })
+            const newProgress =
+                ((completeChildren.length + (element.data.value.checked ? 0 : 1)) / children.length) * 100
+
+            const updateParent = {
+                ...parent,
+                id: parent.id,
+                data: {
+                    label: (
+                        <DefaultNode
+                            type="GROUP"
+                            progress={newProgress}
+                            label={parent.data.value.label}
+                            onAction={onMenuSelected}
+                        />
+                    ),
+                    value: {
+                        label: parent.data.value.label,
+                        progress: newProgress,
+                    },
+                },
+                position: {
+                    x: parent.position.x,
+                    y: parent.position.y,
+                },
+            }
+
+            setElements([...exceptSelectedAndParent, updateParent, updatedNode])
+        }
+        onClose()
+    }
+
+    const realAction = (): void => {
+        if (action === ActionType.ADD_CHECKLIST || action === ActionType.DETAIL) {
+            setShowModal(true)
+        } else if (action === ActionType.CHECK) {
+            updateCheck()
+        } else {
+            window.alert(`Action ${action} will be available later`)
+        }
     }
 
     const onSubmit = (value: FormNodeModel): void => {
@@ -85,26 +160,30 @@ const Home: React.FC = () => {
 
         const element = selectedElement as {[key: string]: any}
         const exceptSelected = elements.filter((elm) => elm.id !== element.id)
-        const countChildren = findChildren(element.id).length
+        const children = findChildren(element.id)
+        const completeChildren = children.filter(
+            (child) => child.data && child.data.value && child.data.value.checked && child.id !== element.id,
+        )
+        const countChildren = children.length
 
         const newChildId = `${element.id}.${countChildren}`
 
         // when checklist has a child, it will become a group
         const renewalParent = {
-            ...selectedElement,
-            id: selectedElement?.id || '0',
+            ...element,
+            id: element?.id || '0',
             data: {
                 label: (
                     <DefaultNode
                         type="GROUP"
-                        progress={countChildren}
-                        label={selectedElement?.data.value.label}
+                        progress={(completeChildren.length / (countChildren + 1)) * 100}
+                        label={element?.data.value.label}
                         onAction={onMenuSelected}
                     />
                 ),
                 value: {
-                    label: selectedElement?.data.value.label,
-                    progress: findChildren(element.id),
+                    label: element?.data.value.label,
+                    progress: 0,
                 },
             },
             position: {
@@ -136,7 +215,7 @@ const Home: React.FC = () => {
                             },
                         },
                         position: {
-                            x: element.position.x + 260 * countChildren,
+                            x: element.position.x + 260 * Math.round(countChildren / 2) * (countChildren % 2 ? 1 : -1),
                             y: element.position.y + 140,
                         },
                     },
@@ -162,9 +241,7 @@ const Home: React.FC = () => {
                 ) : (
                     ''
                 )}
-                {action === ActionType.ADD_CHECKLIST || action === ActionType.ADD_GROUP ? (
-                    <FormNode onSubmit={onSubmit} onClose={onClose} />
-                ) : null}
+                {action === ActionType.ADD_CHECKLIST ? <FormNode onSubmit={onSubmit} onClose={onClose} /> : null}
             </div>
             <ReactFlow
                 elements={elements}
