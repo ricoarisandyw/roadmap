@@ -15,6 +15,7 @@ import ReactFlow, {
 import DetailNode from '../../components/DetailNode/DetailNode'
 import DefaultNode from '../../components/DefaultNode/DefaultNode'
 import ActionType from '../../components/DefaultNode/ActionType'
+import FormNode, {FormNodeModel} from '../../components/FormNode/FormNode'
 
 const onLoad = (reactFlowInstance: OnLoadParams): void => {
     reactFlowInstance.fitView()
@@ -54,46 +55,28 @@ const Home: React.FC = () => {
     }, [])
 
     const realAction = (): void => {
+        if (action === ActionType.ADD_CHECKLIST || action === ActionType.ADD_GROUP || action === ActionType.DETAIL) {
+            setShowModal(true)
+        } else {
+            window.alert(`Action ${action} will be available later`)
+        }
+    }
+
+    const onClose = (): void => {
+        setShowModal(false)
+        setAction('')
+        setSelectedElement(undefined)
+    }
+
+    const onSubmit = (value: FormNodeModel): void => {
         const element = selectedElement as {[key: string]: any}
-        console.log(element.position, action)
-        if (action === 'ADD_GROUP') {
-            setAction('')
+        if (action === ActionType.ADD_CHECKLIST) {
             setElements([
                 ...elements,
                 {
                     id: (elements.length + 1).toString(),
                     data: {
-                        label: (
-                            <DefaultNode
-                                label={`${elements.length + 1} child of ${selectedElement?.id}`}
-                                onMenuSelected={onMenuSelected}
-                            />
-                        ),
-                    },
-                    position: {
-                        x: element.position.x + 260,
-                        y: element.position.y,
-                    },
-                },
-                {
-                    id: `e${(elements.length + 1).toString()}`,
-                    source: selectedElement?.id.toString() || '',
-                    target: (elements.length + 1).toString(),
-                    type: 'smoothstep',
-                },
-            ])
-        } else if (action === 'ADD_CHECKLIST') {
-            setElements([
-                ...elements,
-                {
-                    id: (elements.length + 1).toString(),
-                    data: {
-                        label: (
-                            <DefaultNode
-                                label={`${elements.length + 1} child of ${selectedElement?.id}`}
-                                onMenuSelected={onMenuSelected}
-                            />
-                        ),
+                        label: <DefaultNode label={value.title} onMenuSelected={onMenuSelected} />,
                     },
                     position: {
                         x: element.position.x,
@@ -107,13 +90,29 @@ const Home: React.FC = () => {
                     type: 'smoothstep',
                 },
             ])
-            setSelectedElement(undefined)
-        } else if (action === ActionType.DETAIL) {
-            setShowModal(true)
-            setAction('')
+        } else if (action === ActionType.ADD_GROUP) {
+            setElements([
+                ...elements,
+                {
+                    id: (elements.length + 1).toString(),
+                    data: {
+                        label: <DefaultNode label={value.title} onMenuSelected={onMenuSelected} />,
+                    },
+                    position: {
+                        x: element.position.x + 260,
+                        y: element.position.y,
+                    },
+                },
+                {
+                    id: `e${(elements.length + 1).toString()}`,
+                    source: selectedElement?.id.toString() || '',
+                    target: (elements.length + 1).toString(),
+                    type: 'smoothstep',
+                },
+            ])
         }
 
-        setAction('')
+        onClose()
     }
 
     useEffect(() => {
@@ -125,11 +124,14 @@ const Home: React.FC = () => {
     return (
         <div className="Home fullscreen m-5">
             <div className={['modal fade', showModal ? 'show' : 'd-none'].join(' ')}>
-                {selectedElement ? (
-                    <DetailNode node={selectedElement} onClose={(): void => setShowModal(false)} />
+                {selectedElement && action === ActionType.DETAIL ? (
+                    <DetailNode node={selectedElement} onClose={onClose} />
                 ) : (
-                    'No data'
+                    ''
                 )}
+                {action === ActionType.ADD_CHECKLIST || action === ActionType.ADD_GROUP ? (
+                    <FormNode onSubmit={onSubmit} onClose={onClose} />
+                ) : null}
             </div>
             <ReactFlow
                 elements={elements}
