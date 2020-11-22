@@ -48,7 +48,7 @@ const Home: React.FC = () => {
                     y: 0,
                 },
                 data: {
-                    label: <DefaultNode label="1" onMenuSelected={onMenuSelected} />,
+                    label: <DefaultNode type="GROUP" label="HEAVEN" onMenuSelected={onMenuSelected} />,
                 },
             },
         ])
@@ -76,7 +76,7 @@ const Home: React.FC = () => {
                 {
                     id: (elements.length + 1).toString(),
                     data: {
-                        label: <DefaultNode label={value.title} onMenuSelected={onMenuSelected} />,
+                        label: <DefaultNode type="CHECK" label={value.title} onMenuSelected={onMenuSelected} />,
                     },
                     position: {
                         x: element.position.x,
@@ -96,7 +96,7 @@ const Home: React.FC = () => {
                 {
                     id: (elements.length + 1).toString(),
                     data: {
-                        label: <DefaultNode label={value.title} onMenuSelected={onMenuSelected} />,
+                        label: <DefaultNode type="GROUP" label={value.title} onMenuSelected={onMenuSelected} />,
                     },
                     position: {
                         x: element.position.x + 260,

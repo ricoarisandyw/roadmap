@@ -3,6 +3,27 @@
     height: 70px;
     display: flex;
     position: relative;
+    cursor: pointer;
+
+    .label {
+        width: 100%;
+        font-size: 1.5rem;
+    }
+
+    .check {
+        width: 1rem;
+    }
+
+    .menu-button {
+        cursor: pointer;
+        position: absolute;
+        right: -10px;
+        top: -5px;
+
+        &:hover {
+            color: gray;
+        }
+    }
 
     .menu {
         position: absolute;
