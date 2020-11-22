@@ -68,8 +68,9 @@
         "webpack-merge": "^5.1.4"
     },
     "scripts": {
+        "clean": "rimraf dist",
         "start": "webpack-dev-server --open --progress",
-        "build": "react-app-rewired build",
+        "build": "npm run clean && webpack -p --config ./webpack.config.js",
         "test": "jest --env=jsdom --config=jest.config.json --coverage",
         "lint": "eslint '**/*.tsx' --ignore-pattern node_modules/"
     },
