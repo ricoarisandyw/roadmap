@@ -42,13 +42,17 @@ const Home: React.FC = () => {
     useEffect(() => {
         setElements([
             {
-                id: '1',
+                id: '0',
                 position: {
                     x: 0,
                     y: 0,
                 },
                 data: {
-                    label: <DefaultNode type="GROUP" label="HEAVEN" onMenuSelected={onMenuSelected} />,
+                    label: <DefaultNode progress={20} type="GROUP" label="HEAVEN" onAction={onMenuSelected} />,
+                    value: {
+                        label: 'HEAVEN',
+                        progress: 0,
+                    },
                 },
             },
         ])
@@ -68,51 +72,80 @@ const Home: React.FC = () => {
         setSelectedElement(undefined)
     }
 
+    const findChildren = (id: string): FlowElement[] => {
+        return elements.filter((elm) => {
+            const split = elm.id.split('-')
+            return elm.id.includes('-') && split.length > 1 && split[0] === id
+        })
+    }
+
     const onSubmit = (value: FormNodeModel): void => {
+        // avoid useEffect listener for selectedElement
+        onClose()
+
         const element = selectedElement as {[key: string]: any}
-        if (action === ActionType.ADD_CHECKLIST) {
-            setElements([
-                ...elements,
-                {
-                    id: (elements.length + 1).toString(),
-                    data: {
-                        label: <DefaultNode type="CHECK" label={value.title} onMenuSelected={onMenuSelected} />,
-                    },
-                    position: {
-                        x: element.position.x,
-                        y: element.position.y + 140,
-                    },
+        const exceptSelected = elements.filter((elm) => elm.id !== element.id)
+        const countChildren = findChildren(element.id).length
+
+        const newChildId = `${element.id}.${countChildren}`
+
+        // when checklist has a child, it will become a group
+        const renewalParent = {
+            ...selectedElement,
+            id: selectedElement?.id || '0',
+            data: {
+                label: (
+                    <DefaultNode
+                        type="GROUP"
+                        progress={countChildren}
+                        label={selectedElement?.data.value.label}
+                        onAction={onMenuSelected}
+                    />
+                ),
+                value: {
+                    label: selectedElement?.data.value.label,
+                    progress: findChildren(element.id),
                 },
-                {
-                    id: `e${(elements.length + 1).toString()}`,
-                    source: selectedElement?.id.toString() || '',
-                    target: (elements.length + 1).toString(),
-                    type: 'smoothstep',
-                },
-            ])
-        } else if (action === ActionType.ADD_GROUP) {
-            setElements([
-                ...elements,
-                {
-                    id: (elements.length + 1).toString(),
-                    data: {
-                        label: <DefaultNode type="GROUP" label={value.title} onMenuSelected={onMenuSelected} />,
-                    },
-                    position: {
-                        x: element.position.x + 260,
-                        y: element.position.y,
-                    },
-                },
-                {
-                    id: `e${(elements.length + 1).toString()}`,
-                    source: selectedElement?.id.toString() || '',
-                    target: (elements.length + 1).toString(),
-                    type: 'smoothstep',
-                },
-            ])
+            },
+            position: {
+                x: element.position.x,
+                y: element.position.y,
+            },
         }
 
-        onClose()
+        const edge = {
+            id: `${element.id}-${newChildId}`,
+            source: element.id,
+            target: newChildId,
+            type: 'smoothstep',
+        }
+
+        if (element) {
+            if (action === ActionType.ADD_CHECKLIST) {
+                setElements([
+                    ...exceptSelected,
+                    renewalParent,
+                    {
+                        id: newChildId,
+                        data: {
+                            label: <DefaultNode type="CHECK" label={value.title} onAction={onMenuSelected} />,
+                            value: {
+                                label: value.title,
+                                description: value.description,
+                                checked: false,
+                            },
+                        },
+                        position: {
+                            x: element.position.x + 260 * countChildren,
+                            y: element.position.y + 140,
+                        },
+                    },
+                    edge,
+                ])
+            }
+        } else {
+            console.error('Elemenet not found')
+        }
     }
 
     useEffect(() => {

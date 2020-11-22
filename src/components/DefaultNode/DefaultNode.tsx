@@ -7,7 +7,9 @@ import './DefaultNode.scss'
 interface DefaultNodeProps {
     label: string
     type: 'GROUP' | 'CHECK'
-    onMenuSelected: (action: string) => void
+    checked?: boolean
+    progress?: number
+    onAction: (action: string) => void
 }
 
 const DefaultNode: React.FC<DefaultNodeProps> = (props: DefaultNodeProps) => {
@@ -15,7 +17,7 @@ const DefaultNode: React.FC<DefaultNodeProps> = (props: DefaultNodeProps) => {
 
     const onMenuSelected = (action: string): void => {
         setShowMenu(false)
-        props.onMenuSelected(action)
+        props.onAction(action)
     }
 
     return (
@@ -25,13 +27,21 @@ const DefaultNode: React.FC<DefaultNodeProps> = (props: DefaultNodeProps) => {
                     <div className={['flex-grow-1', props.type === 'CHECK' ? 'text-left' : 'text-center'].join(' ')}>
                         {props.label}
                     </div>
-                    {props.type === 'CHECK' ? <input className="check form-control" type="checkbox" /> : null}
+                    {props.type === 'CHECK' ? (
+                        <input
+                            checked={props.checked}
+                            onChange={(): void => props.onAction(ActionType.CHECK)}
+                            className="check form-control"
+                            type="checkbox"
+                        />
+                    ) : null}
                 </div>
                 {props.type === 'GROUP' ? (
                     <div className="progress">
                         <div
-                            className="w-100 progress-bar progress-bar-striped progress-bar-animated"
+                            className="progress-bar progress-bar-striped progress-bar-animated"
                             role="progressbar"
+                            style={{width: `${props.progress}%`}}
                         ></div>
                     </div>
                 ) : null}

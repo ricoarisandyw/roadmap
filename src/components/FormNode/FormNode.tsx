@@ -42,7 +42,7 @@ const FormNode: React.FC<FormNodeProps> = (props: FormNodeProps) => {
                     <form onSubmit={handleSubmit}>
                         <input
                             required
-                            className="form-control"
+                            className="form-control mb-3"
                             onChange={(event): void =>
                                 setNodeForm({
                                     ...nodeForm,
@@ -51,7 +51,7 @@ const FormNode: React.FC<FormNodeProps> = (props: FormNodeProps) => {
                             }
                         />
                         <textarea
-                            className="form-control"
+                            className="form-control mb-3"
                             onChange={(event): void =>
                                 setNodeForm({
                                     ...nodeForm,
