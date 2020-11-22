@@ -1,124 +1,152 @@
-import React, { useEffect, useState } from 'react';
-
+import React, {useEffect, useState} from 'react'
+import './Home.scss'
 import ReactFlow, {
-  removeElements,
-  addEdge,
-  Controls,
-  Background,
-  Elements,
-  Edge,
-  Connection,
-  OnLoadParams,
-  FlowElement,
-} from 'react-flow-renderer';
-import DefaultNode from '../../components/DefaultNode/DefaultNode';
+    removeElements,
+    addEdge,
+    Controls,
+    Background,
+    Elements,
+    Edge,
+    Connection,
+    OnLoadParams,
+    FlowElement,
+} from 'react-flow-renderer'
+
+import DetailNode from '../../components/DetailNode/DetailNode'
+import DefaultNode from '../../components/DefaultNode/DefaultNode'
+import ActionType from '../../components/DefaultNode/ActionType'
 
 const onLoad = (reactFlowInstance: OnLoadParams): void => {
-  reactFlowInstance.fitView();
-};
+    reactFlowInstance.fitView()
+}
 
 const Home: React.FC = () => {
-  const [elements, setElements] = useState<FlowElement[]>([]);
-  const [selectedElement, setSelectedElement] = useState<FlowElement>() 
-  const [action, setAction] = useState("")
+    const [elements, setElements] = useState<FlowElement[]>([])
+    const [selectedElement, setSelectedElement] = useState<FlowElement>()
+    const [action, setAction] = useState('')
+    const [showModal, setShowModal] = useState(false)
 
-  const onMenuSelected = (action: string): void => {
-    setAction(action)
-  }
+    const onMenuSelected = (actionType: string): void => {
+        setAction(actionType)
+    }
 
-  const onElementsRemove = (elementsToRemove: Elements): void => setElements((els) => removeElements(elementsToRemove, els));
-  const onConnect = (params: Edge | Connection): void => setElements((els) => addEdge(params, els));
+    const onElementsRemove = (elementsToRemove: Elements): void =>
+        setElements((els) => removeElements(elementsToRemove, els))
+    const onConnect = (params: Edge | Connection): void => setElements((els) => addEdge(params, els))
 
-  const onElementClick = (event: React.MouseEvent<Element, MouseEvent>, element: FlowElement): void => {
-    setSelectedElement(element)
-  }
+    const onElementClick = (event: React.MouseEvent<Element, MouseEvent>, element: FlowElement): void => {
+        setSelectedElement(element)
+    }
 
-  useEffect(()=>{
-    setElements([{
-      id: "1",
-      position: {
-          x: 0,
-          y: 0,
-      },
-      data: {
-        label: (
-          <DefaultNode label="1" onMenuSelected={onMenuSelected} />
-        )
-      }
-  }])
-  }, [])
+    useEffect(() => {
+        setElements([
+            {
+                id: '1',
+                position: {
+                    x: 0,
+                    y: 0,
+                },
+                data: {
+                    label: <DefaultNode label="1" onMenuSelected={onMenuSelected} />,
+                },
+            },
+        ])
+    }, [])
 
-  const realAction = (): void => {
-    const element = selectedElement as {[key: string]: any}
-    console.log(element['position'], action)
-    if(action === "ADD_GROUP")
-      setElements([
-        ...elements,
-        {
-          id: (elements.length + 1).toString(),
-          data: {
-            label: <DefaultNode label={(elements.length + 1) + " child of "+selectedElement?.id} onMenuSelected={onMenuSelected} />
-          },          
-          position: {
-            x: element['position'].x + 260,
-            y: element['position'].y,
-          },
-        },
-        {
-          id: "e" +(elements.length + 1).toString(),
-          source: selectedElement?.id.toString() || "",
-          target: (elements.length + 1).toString(),
-          type: 'smoothstep',
+    const realAction = (): void => {
+        const element = selectedElement as {[key: string]: any}
+        console.log(element.position, action)
+        if (action === 'ADD_GROUP') {
+            setAction('')
+            setElements([
+                ...elements,
+                {
+                    id: (elements.length + 1).toString(),
+                    data: {
+                        label: (
+                            <DefaultNode
+                                label={`${elements.length + 1} child of ${selectedElement?.id}`}
+                                onMenuSelected={onMenuSelected}
+                            />
+                        ),
+                    },
+                    position: {
+                        x: element.position.x + 260,
+                        y: element.position.y,
+                    },
+                },
+                {
+                    id: `e${(elements.length + 1).toString()}`,
+                    source: selectedElement?.id.toString() || '',
+                    target: (elements.length + 1).toString(),
+                    type: 'smoothstep',
+                },
+            ])
+        } else if (action === 'ADD_CHECKLIST') {
+            setElements([
+                ...elements,
+                {
+                    id: (elements.length + 1).toString(),
+                    data: {
+                        label: (
+                            <DefaultNode
+                                label={`${elements.length + 1} child of ${selectedElement?.id}`}
+                                onMenuSelected={onMenuSelected}
+                            />
+                        ),
+                    },
+                    position: {
+                        x: element.position.x,
+                        y: element.position.y + 140,
+                    },
+                },
+                {
+                    id: `e${(elements.length + 1).toString()}`,
+                    source: selectedElement?.id.toString() || '',
+                    target: (elements.length + 1).toString(),
+                    type: 'smoothstep',
+                },
+            ])
+            setSelectedElement(undefined)
+        } else if (action === ActionType.DETAIL) {
+            setShowModal(true)
+            setAction('')
         }
-      ])
-    else if (action === "ADD_CHECKLIST")
-      setElements([
-        ...elements,
-        {
-          id: (elements.length + 1).toString(),
-          data: {
-            label: <DefaultNode label={(elements.length + 1) + " child of "+selectedElement?.id} onMenuSelected={onMenuSelected} />
-          },          
-          position: {
-            x: element['position'].x,
-            y: element['position'].y + 140,
-          },
-        },
-        {
-          id: "e" + (elements.length + 1).toString(),
-          source: selectedElement?.id.toString() || "",
-          target: (elements.length + 1).toString(),
-          type: 'smoothstep',
-        }
-      ])
 
-    setSelectedElement(undefined)
-    setAction("")
-  }
+        setAction('')
+    }
 
-  useEffect(() => {
-    // trigger action here
-    if (selectedElement) realAction()
-  }, [selectedElement])
+    useEffect(() => {
+        // trigger action here
+        console.log(selectedElement, action)
+        if (selectedElement && action !== '') realAction()
+    }, [selectedElement, action])
 
-  return (
-    <div className="fullscreen m-5">
-      <ReactFlow
-          elements={elements}
-          onElementsRemove={onElementsRemove}
-          onConnect={onConnect}
-          onLoad={onLoad}
-          snapToGrid={true}
-          snapGrid={[15, 15]}
-          onElementClick={onElementClick}
-          nodesDraggable={false}
-          nodesConnectable={false}
-      >
-        <Controls />
-        <Background color="#aaa" gap={16} />
-      </ReactFlow>
-    </div>
-  );
-};
+    return (
+        <div className="Home fullscreen m-5">
+            <div className={['modal fade', showModal ? 'show' : 'd-none'].join(' ')}>
+                {selectedElement ? (
+                    <DetailNode node={selectedElement} onClose={(): void => setShowModal(false)} />
+                ) : (
+                    'No data'
+                )}
+            </div>
+            <ReactFlow
+                elements={elements}
+                onElementsRemove={onElementsRemove}
+                onConnect={onConnect}
+                onLoad={onLoad}
+                snapToGrid={true}
+                snapGrid={[15, 15]}
+                onElementClick={onElementClick}
+                nodesDraggable={false}
+                nodesConnectable={false}
+            >
+                <Controls />
+                <Background color="#aaa" gap={16} />
+            </ReactFlow>
+        </div>
+    )
+}
 
-export default Home;
+export default Home

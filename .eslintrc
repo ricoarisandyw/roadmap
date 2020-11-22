@@ -1,32 +1,39 @@
 {
-    "root": true,
-    "parser": "@typescript-eslint/parser", // specify eslint parser
-    "plugins": [
-      "@typescript-eslint"
-    ],
-    "extends": [
-      "eslint:recommended",
-      "plugin:react/recommended",
-      "plugin:@typescript-eslint/eslint-recommended",
-      "plugin:@typescript-eslint/recommended"
-    ],
-    "rules": {
-      "no-console":"warn",
-      "no-alert":"warn",
-      "no-process-env":"warn",
-      "react/jsx-pascal-case":"warn"
-    },
-    "env": {
-      "browser": true,
-      "node": true,
-      "commonjs": true,
-      "jest": true
-    },
-    "settings": {
-      "import/resolver": {
-        "node": {
-          "extensions": [".js", ".jsx", ".ts", ".tsx"]
-        }
+  "root": true,
+  "parser": "@typescript-eslint/parser", // specify eslint parser
+  "plugins": [
+    "@typescript-eslint"
+  ],
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:@shopify/esnext",
+    "plugin:@shopify/prettier"
+  ],
+  "rules": {
+    "babel/object-curly-spacing":"warn",
+    "no-console":"warn",
+    "no-alert":"warn",
+    "promise/no-nesting":"warn",
+    "no-process-env":"warn",
+    "@shopify/prefer-early-return":"warn",
+    "@shopify/strict-component-boundaries":"warn",
+    "@typescript-eslint/no-var-requires":"warn",
+    "react/jsx-pascal-case":"warn"
+  },
+  "env": {
+    "browser": true,
+    "node": true,
+    "commonjs": true,
+    "jest": true
+  },
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "extensions": [".js", ".jsx", ".ts", ".tsx"]
       }
     }
+  }
 }
