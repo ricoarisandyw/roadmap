@@ -71,7 +71,7 @@
         "start": "webpack-dev-server --open --progress",
         "build": "react-app-rewired build",
         "test": "jest --env=jsdom --config=jest.config.json --coverage",
-        "lint": "eslint . --ext .ts"
+        "lint": "eslint '**/*.tsx' --ignore-pattern node_modules/"
     },
     "eslintConfig": {
         "extends": "react-app"

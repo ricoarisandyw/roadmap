@@ -11,10 +11,9 @@ import ReactFlow, {
   OnLoadParams,
   FlowElement,
 } from 'react-flow-renderer';
-import DefaultNode from '../../components/DefaultNode';
+import DefaultNode from '../../components/DefaultNode/DefaultNode';
 
-const onLoad = (reactFlowInstance: OnLoadParams) => {
-  console.log('flow loaded:', reactFlowInstance);
+const onLoad = (reactFlowInstance: OnLoadParams): void => {
   reactFlowInstance.fitView();
 };
 
@@ -31,11 +30,10 @@ const Home: React.FC = () => {
     setAction("ADD_VERTICAL")
   }
 
-  const onElementsRemove = (elementsToRemove: Elements) => setElements((els) => removeElements(elementsToRemove, els));
-  const onConnect = (params: Edge | Connection) => setElements((els) => addEdge(params, els));
+  const onElementsRemove = (elementsToRemove: Elements): void => setElements((els) => removeElements(elementsToRemove, els));
+  const onConnect = (params: Edge | Connection): void => setElements((els) => addEdge(params, els));
 
-  const onElementClick = (event: React.MouseEvent<Element, MouseEvent>, element: FlowElement) => {
-    console.log(event, element)
+  const onElementClick = (event: React.MouseEvent<Element, MouseEvent>, element: FlowElement): void => {
     setSelectedElement(element)
   }
 
@@ -81,6 +79,9 @@ const Home: React.FC = () => {
           position: {
             x: element['position'].x,
             y: element['position'].y + 200,
+          },
+          style: {
+            width: "500px"
           }
         }
       ])
@@ -91,26 +92,25 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     // trigger action here
-    console.log(selectedElement, action)
     if (selectedElement) realAction()
   }, [selectedElement])
 
   return (
     <div className="fullscreen m-5">
-        <ReactFlow
-            elements={elements}
-            onElementsRemove={onElementsRemove}
-            onConnect={onConnect}
-            onLoad={onLoad}
-            snapToGrid={true}
-            snapGrid={[15, 15]}
-            onElementClick={onElementClick}
-            nodesDraggable={false}
-            nodesConnectable={false}
-        >
-            <Controls />
-            <Background color="#aaa" gap={16} />
-        </ReactFlow>
+      <ReactFlow
+          elements={elements}
+          onElementsRemove={onElementsRemove}
+          onConnect={onConnect}
+          onLoad={onLoad}
+          snapToGrid={true}
+          snapGrid={[15, 15]}
+          onElementClick={onElementClick}
+          nodesDraggable={false}
+          nodesConnectable={false}
+      >
+        <Controls />
+        <Background color="#aaa" gap={16} />
+      </ReactFlow>
     </div>
   );
 };

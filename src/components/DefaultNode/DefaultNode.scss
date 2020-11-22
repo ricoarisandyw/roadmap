@@ -1,0 +1,36 @@
+.DefaultNode {
+    width: 130px;
+    height: 70px;
+    display: flex;
+    position: relative;
+
+    .menu {
+        position: absolute;
+        z-index: 10;
+
+        .item {
+            cursor: pointer;
+            padding: 0.5rem 0.75rem;
+
+            &:hover {
+                background: silver;
+            }
+
+            &-danger{
+                cursor: pointer;
+                color: white;
+                background: rgb(204, 55, 55);
+                padding: 0.5rem 0.75rem;
+
+                &:hover {
+                    background: rgb(252, 122, 122);
+                    color: black;
+                }
+            }
+        }
+    }
+
+    .progress {
+        width: 130px;
+    }
+}
