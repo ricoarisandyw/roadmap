@@ -113,8 +113,26 @@ const Home: React.FC = () => {
             const completeChildren = children.filter((child) => {
                 return child.data && child.data.value && child.data.value.checked && child.id !== element.id
             })
-            const newProgress =
+            const childrenProgress = children
+                .filter(
+                    (child) =>
+                        child.data &&
+                        child.data.value &&
+                        child.data.value.progress &&
+                        child.id !== element.id &&
+                        !child.data.value.checked,
+                )
+                .map((child) => child.data.value.progress / children.length)
+            const countProgress = (): number => {
+                if (childrenProgress.length > 1)
+                    return childrenProgress.reduce((value, currentValue) => value + currentValue)
+                else if (childrenProgress.length === 1) return childrenProgress[0]
+                else return 0
+            }
+
+            const progressFromCheck =
                 ((completeChildren.length + (element.data.value.checked ? 0 : 1)) / children.length) * 100
+            const newProgress = progressFromCheck + countProgress()
 
             const updateParent = {
                 ...parent,
