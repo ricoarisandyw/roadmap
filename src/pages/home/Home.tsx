@@ -86,11 +86,24 @@ const Home: React.FC = () => {
         return undefined
     }
 
+    const descent = (children: FlowElement, currentDescent: FlowElement[] = []): FlowElement[] => {
+        const foundParent = findParentById(children.id)
+        if (foundParent) {
+            return descent(foundParent, [...currentDescent, foundParent])
+        } else {
+            return currentDescent
+        }
+    }
+
     const updateCheck = (): void => {
         // update parent first
         const element = selectedElement as {[key: string]: any}
         const parent = findParentById(element.id) as {[key: string]: any}
-        const exceptSelectedAndParent = elements.filter((elm) => elm.id !== element.id && elm.id !== parent.id)
+        const descendant = selectedElement ? descent(selectedElement) : null
+        const descendantId = descendant ? descendant.map((desc) => desc.id) : []
+        const exceptSelectedAndParent = elements.filter(
+            (elm) => elm.id !== element.id && elm.id !== parent.id && !descendantId.includes(elm.id),
+        )
 
         const updatedNode = {
             ...element,
