@@ -4,6 +4,7 @@ const ActionType = {
     COLLAPSE: 'COLLAPSE',
     DELETE: 'DELETE',
     CHECK: 'CHECK',
+    UPDATE_NODE: 'UPDATE_NODE',
 }
 
 export default ActionType

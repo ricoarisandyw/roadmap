@@ -95,34 +95,14 @@ const Home: React.FC = () => {
         }
     }
 
-    const updateCheck = (): void => {
-        // update parent first
-        const element = selectedElement as {[key: string]: any}
-        const parent = findParentById(element.id) as {[key: string]: any}
+    const updateNode = (): void => {
         const descendant = selectedElement ? descent(selectedElement) : null
         const descendantId = descendant ? descendant.map((desc) => desc.id) : []
-        const exceptSelectedAndParent = elements.filter(
-            (elm) => elm.id !== element.id && elm.id !== parent.id && !descendantId.includes(elm.id),
-        )
+        const exceptDescent = elements.filter((elm) => !descendantId.includes(elm.id))
 
-        const updatedNode = {
-            ...element,
-            id: element.id,
-            data: {
-                label: element.data.label,
-                value: {
-                    ...element.data.value.label,
-                    checked: !element.data.value.checked,
-                },
-            },
-            position: {
-                x: element.position.x,
-                y: element.position.y,
-            },
-        }
-
-        if (parent) {
-            const children = findChildren(parent.id)
+        const listOfUpdatedNode: FlowElement[] = []
+        descendant?.forEach((element: any) => {
+            const children = findChildren(element.id)
             const completeChildren = children.filter((child) => {
                 return child.data && child.data.value && child.data.value.checked && child.id !== element.id
             })
@@ -142,37 +122,64 @@ const Home: React.FC = () => {
                 else if (childrenProgress.length === 1) return childrenProgress[0]
                 else return 0
             }
-
             const progressFromCheck =
                 ((completeChildren.length + (element.data.value.checked ? 0 : 1)) / children.length) * 100
             const newProgress = progressFromCheck + countProgress()
-
-            const updateParent = {
-                ...parent,
-                id: parent.id,
+            const updatedNode = {
+                ...element,
+                id: element.id,
                 data: {
                     label: (
                         <DefaultNode
                             type="GROUP"
                             progress={newProgress}
-                            label={parent.data.value.label}
+                            label={element.data.value.label}
                             onAction={onMenuSelected}
                         />
                     ),
                     value: {
-                        label: parent.data.value.label,
+                        label: element.data.value.label,
                         progress: newProgress,
                     },
                 },
                 position: {
-                    x: parent.position.x,
-                    y: parent.position.y,
+                    x: element.position.x,
+                    y: element.position.y,
                 },
             }
+            listOfUpdatedNode.push(updatedNode)
+        })
 
-            setElements([...exceptSelectedAndParent, updateParent, updatedNode])
-        }
+        setElements([...exceptDescent, ...listOfUpdatedNode])
+
         onClose()
+    }
+
+    const updateCheck = (): void => {
+        // update parent first
+        const element = selectedElement as {[key: string]: any}
+        const exceptSelected = elements.filter((elm) => elm.id !== element.id)
+
+        const updatedNode = {
+            ...element,
+            id: element.id,
+            data: {
+                label: element.data.label,
+                value: {
+                    ...element.data.value.label,
+                    checked: !element.data.value.checked,
+                },
+            },
+            position: {
+                x: element.position.x,
+                y: element.position.y,
+            },
+        }
+
+        setElements([...exceptSelected, updatedNode])
+        setAction(ActionType.UPDATE_NODE)
+        // if (selectedElement) updateNode(selectedElement)
+        // onClose()
     }
 
     const realAction = (): void => {
@@ -180,6 +187,8 @@ const Home: React.FC = () => {
             setShowModal(true)
         } else if (action === ActionType.CHECK) {
             updateCheck()
+        } else if (action === ActionType.UPDATE_NODE) {
+            updateNode()
         } else {
             window.alert(`Action ${action} will be available later`)
         }
