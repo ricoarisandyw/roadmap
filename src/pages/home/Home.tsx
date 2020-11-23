@@ -86,73 +86,73 @@ const Home: React.FC = () => {
         return undefined
     }
 
-    const descent = (children: FlowElement, currentDescent: FlowElement[] = []): FlowElement[] => {
-        const foundParent = findParentById(children.id)
-        if (foundParent) {
-            return descent(foundParent, [...currentDescent, foundParent])
-        } else {
-            return currentDescent
-        }
-    }
-
     const updateNode = (): void => {
-        const descendant = selectedElement ? descent(selectedElement) : null
-        const descendantId = descendant ? descendant.map((desc) => desc.id) : []
-        const exceptDescent = elements.filter((elm) => !descendantId.includes(elm.id))
+        const foundParent = selectedElement ? findParentById(selectedElement.id) : null
 
-        const listOfUpdatedNode: FlowElement[] = []
-        descendant?.forEach((element: any) => {
-            const children = findChildren(element.id)
+        if (foundParent) {
+            const parent = foundParent as any
+            const exceptParent = elements.filter((elm) => parent.id !== elm.id)
+
+            const children = findChildren(parent.id)
+
+            // handle children type checkbox
             const completeChildren = children.filter((child) => {
-                return child.data && child.data.value && child.data.value.checked && child.id !== element.id
+                return child.data && child.data.value && child.data.value.checked && child.id !== parent.id
             })
+
+            // handle children type group
             const childrenProgress = children
                 .filter(
                     (child) =>
+                        // edge don't have data
                         child.data &&
+                        // edge don't have value
                         child.data.value &&
+                        // type check don't have progress
                         child.data.value.progress &&
-                        child.id !== element.id &&
+                        // children not include this
+                        child.id !== parent.id &&
+                        // checkbox which level up to group still have checked
                         !child.data.value.checked,
                 )
                 .map((child) => child.data.value.progress / children.length)
+
             const countProgress = (): number => {
                 if (childrenProgress.length > 1)
                     return childrenProgress.reduce((value, currentValue) => value + currentValue)
                 else if (childrenProgress.length === 1) return childrenProgress[0]
                 else return 0
             }
-            const progressFromCheck =
-                ((completeChildren.length + (element.data.value.checked ? 0 : 1)) / children.length) * 100
+            const progressFromCheck = (completeChildren.length / children.length) * 100
             const newProgress = progressFromCheck + countProgress()
             const updatedNode = {
-                ...element,
-                id: element.id,
+                ...parent,
+                id: parent.id,
                 data: {
                     label: (
                         <DefaultNode
                             type="GROUP"
                             progress={newProgress}
-                            label={element.data.value.label}
+                            label={parent.data.value.label}
                             onAction={onMenuSelected}
                         />
                     ),
                     value: {
-                        label: element.data.value.label,
+                        label: parent.data.value.label,
                         progress: newProgress,
                     },
                 },
                 position: {
-                    x: element.position.x,
-                    y: element.position.y,
+                    x: parent.position.x,
+                    y: parent.position.y,
                 },
             }
-            listOfUpdatedNode.push(updatedNode)
-        })
+            setElements([...exceptParent, updatedNode])
 
-        setElements([...exceptDescent, ...listOfUpdatedNode])
-
-        onClose()
+            setSelectedElement(parent)
+        } else {
+            onClose()
+        }
     }
 
     const updateCheck = (): void => {
