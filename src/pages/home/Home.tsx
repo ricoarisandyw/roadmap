@@ -19,6 +19,7 @@ import FormNode, {FormNodeModel} from '../../components/FormNode/FormNode'
 import {
     filterChildrenProgress,
     filterCompletedChildren,
+    filterExcept,
     findChildren,
     findParentById,
     getAllChildrenId,
@@ -148,8 +149,12 @@ const Home: React.FC = () => {
     }
 
     const deleteNode = (): void => {
-        const allChildren = selectedElement ? getAllChildrenId(selectedElement.id, [], elements) : []
-        setElements(elements.filter((elm) => elm.id !== selectedElement?.id && allChildren.includes(elm.id)))
+        const element = selectedElement as any
+        const exceptChildren = elements.filter(
+            filterExcept([element.id, ...getAllChildrenId(element.id, [], elements)]),
+        )
+
+        setElements(exceptChildren)
         onClose()
     }
 
@@ -193,7 +198,6 @@ const Home: React.FC = () => {
             id: `${element.id}-${newChildId}`,
             source: element.id,
             target: newChildId,
-            type: 'smoothstep',
         }
 
         if (element) {
@@ -224,6 +228,14 @@ const Home: React.FC = () => {
         }
     }
 
+    const collapse = (): void => {
+        const element = selectedElement as any
+        const exceptChildren = elements.filter(filterExcept([...getAllChildrenId(element.id, [], elements)]))
+
+        setElements(exceptChildren)
+        onClose()
+    }
+
     const realAction = (): void => {
         if (action === ActionType.ADD_CHECKLIST || action === ActionType.DETAIL) {
             setShowModal(true)
@@ -234,6 +246,8 @@ const Home: React.FC = () => {
         } else if (action === ActionType.DELETE) {
             if (confirm('Are you sure want to delete this item?')) deleteNode()
             else onClose()
+        } else if (action === ActionType.COLLAPSE) {
+            collapse()
         } else {
             window.alert(`Action ${action} will be available later`)
         }

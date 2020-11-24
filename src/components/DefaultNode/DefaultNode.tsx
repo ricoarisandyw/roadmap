@@ -25,7 +25,7 @@ const DefaultNode: React.FC<DefaultNodeProps> = (props: DefaultNodeProps) => {
             <div className="w-100 my-auto">
                 <div className={['label d-flex', props.type === 'CHECK' ? 'justify-content-center' : ''].join(' ')}>
                     <div className={['flex-grow-1', props.type === 'CHECK' ? 'text-left' : 'text-center'].join(' ')}>
-                        {props.progress}
+                        {props.label}
                     </div>
                     {props.type === 'CHECK' ? (
                         <input

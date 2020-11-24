@@ -48,3 +48,5 @@ export const getAllChildrenId = (id: string, allId: string[] = [], elements: Flo
         return allId
     }
 }
+
+export const filterExcept = (idList: string[]) => (element: FlowElement): boolean => !idList.includes(element.id)

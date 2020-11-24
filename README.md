@@ -13,6 +13,9 @@ TODO :
 - Add description / other important info (DONE)
 - cloud database
 
+BUG :
+- after create and delete node, the position after create again is not correct
+
 ADVANCE : 
 - task based on time
 - fast task on duration todo it
