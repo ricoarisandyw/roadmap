@@ -22,6 +22,7 @@ import {
     filterExcept,
     findChildren,
     findParentById,
+    findParentEdge,
     getAllChildrenId,
 } from '../../model/RoadmapNode'
 
@@ -150,8 +151,9 @@ const Home: React.FC = () => {
 
     const deleteNode = (): void => {
         const element = selectedElement as any
+        const parentEdge = elements.find(findParentEdge(element.id))
         const exceptChildren = elements.filter(
-            filterExcept([element.id, ...getAllChildrenId(element.id, [], elements)]),
+            filterExcept([element.id, ...getAllChildrenId(element.id, [], elements), parentEdge?.id]),
         )
 
         setElements(exceptChildren)

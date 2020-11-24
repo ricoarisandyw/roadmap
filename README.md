@@ -14,7 +14,7 @@ TODO :
 - cloud database
 
 BUG :
-- after create and delete node, the position after create again is not correct
+- position of other node after deleting one is not change (not define how it should be)
 
 ADVANCE : 
 - task based on time

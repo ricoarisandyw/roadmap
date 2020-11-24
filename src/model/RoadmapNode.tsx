@@ -1,6 +1,6 @@
 import {FlowElement} from 'react-flow-renderer'
 
-export const findChildren = (id: string, elements: FlowElement[]): FlowElement[] => {
+export const findChildren = (id: string, elements: FlowElement[], includeEdge = false): FlowElement[] => {
     const childrenEdge = elements.filter((elm) => {
         const split = elm.id.split('-')
         return elm.id.includes('-') && split.length > 1 && split[0] === id
@@ -10,6 +10,7 @@ export const findChildren = (id: string, elements: FlowElement[]): FlowElement[]
         const foundChild = elements.find((elm) => elm.id === edge.id.split('-')[1])
         if (foundChild) children.push(foundChild)
     })
+    if (includeEdge) return [...children, ...childrenEdge]
     return children
 }
 
@@ -37,8 +38,13 @@ export const filterChildrenProgress = (parentId: string) => (child: FlowElement)
     // checkbox which level up to group still have checked
     !child.data.value.checked
 
-export const getAllChildrenId = (id: string, allId: string[] = [], elements: FlowElement[] = []): string[] => {
-    const children = findChildren(id, elements)
+export const getAllChildrenId = (
+    id: string,
+    allId: string[] = [],
+    elements: FlowElement[] = [],
+    includeEdge = false,
+): string[] => {
+    const children = findChildren(id, elements, includeEdge)
     if (children.length > 0) {
         const childrenId = children.map((child) => child.id)
         const all = children.map((child) => getAllChildrenId(child.id, childrenId, elements))
@@ -50,3 +56,7 @@ export const getAllChildrenId = (id: string, allId: string[] = [], elements: Flo
 }
 
 export const filterExcept = (idList: string[]) => (element: FlowElement): boolean => !idList.includes(element.id)
+
+export const findParentEdge = (id: string) => (element: FlowElement): boolean => {
+    return element.id.includes('-') && element.id.split('-')[1] === id
+}
