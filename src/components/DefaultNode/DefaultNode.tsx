@@ -57,7 +57,7 @@ const DefaultNode: React.FC<DefaultNodeProps> = (props: DefaultNodeProps) => {
                     Add Checklist
                 </div>
                 <div className="item" onClick={(): void => onMenuSelected(ActionType.COLLAPSE)}>
-                    Collapse
+                    Expand/Collapse
                 </div>
                 <div className="item-danger" onClick={(): void => onMenuSelected(ActionType.DELETE)}>
                     Delete

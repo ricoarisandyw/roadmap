@@ -47,11 +47,32 @@ export const getAllChildrenId = (
     const children = findChildren(id, elements, includeEdge)
     if (children.length > 0) {
         const childrenId = children.map((child) => child.id)
-        const all = children.map((child) => getAllChildrenId(child.id, childrenId, elements))
+        const all = children
+            .filter((child) => !child.id.includes('-'))
+            .map((child) => getAllChildrenId(child.id, childrenId, elements, includeEdge))
         if (all.length > 1) return all.reduce((value, current) => [...value, ...current])
         else return all[0]
     } else {
         return allId
+    }
+}
+
+export const getAllChildren = (
+    id: string,
+    allChildren: FlowElement[] = [],
+    elements: FlowElement[] = [],
+    includeEdge = false,
+): FlowElement[] => {
+    const children = findChildren(id, elements, includeEdge)
+    if (children.length > 0) {
+        const all = children
+            .filter((child) => !child.id.includes('-'))
+            .map((child) => getAllChildren(child.id, children, elements, includeEdge))
+        if (all.length > 1)
+            return all.reduce((value, current) => [...value, ...current.filter((cur) => !value.includes(cur))])
+        else return all[0]
+    } else {
+        return allChildren
     }
 }
 

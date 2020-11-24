@@ -23,6 +23,7 @@ import {
     findChildren,
     findParentById,
     findParentEdge,
+    getAllChildren,
     getAllChildrenId,
 } from '../../model/RoadmapNode'
 
@@ -232,9 +233,31 @@ const Home: React.FC = () => {
 
     const collapse = (): void => {
         const element = selectedElement as any
-        const exceptChildren = elements.filter(filterExcept([...getAllChildrenId(element.id, [], elements)]))
+        const updatedElement = {
+            ...element,
+            id: element.id,
+            data: {
+                ...element.data,
+                value: {
+                    ...element.data.value,
+                    isHidden: !element.data.value.isHidden,
+                },
+            },
+            position: element.position,
+        }
 
-        setElements(exceptChildren)
+        const exceptChildrenAndElement = elements.filter(
+            filterExcept([...getAllChildrenId(element.id, [], elements, true), element.id]),
+        )
+        const allChildren = getAllChildren(element.id, [], elements, true)
+        const updatedChildren = allChildren.map((elm) => ({
+            ...elm,
+            id: elm.id,
+            isHidden: !element.data.value.isHidden,
+            position: (elm as any).position,
+        }))
+
+        setElements([...exceptChildrenAndElement, ...updatedChildren, updatedElement])
         onClose()
     }
 
