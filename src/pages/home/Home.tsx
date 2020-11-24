@@ -16,6 +16,13 @@ import DetailNode from '../../components/DetailNode/DetailNode'
 import DefaultNode from '../../components/DefaultNode/DefaultNode'
 import ActionType from '../../components/DefaultNode/ActionType'
 import FormNode, {FormNodeModel} from '../../components/FormNode/FormNode'
+import {
+    filterChildrenProgress,
+    filterCompletedChildren,
+    findChildren,
+    findParentById,
+    getAllChildrenId,
+} from '../../model/RoadmapNode'
 
 const onLoad = (reactFlowInstance: OnLoadParams): void => {
     reactFlowInstance.fitView()
@@ -64,57 +71,17 @@ const Home: React.FC = () => {
         ])
     }, [])
 
-    const findChildren = (id: string): FlowElement[] => {
-        const childrenEdge = elements.filter((elm) => {
-            const split = elm.id.split('-')
-            return elm.id.includes('-') && split.length > 1 && split[0] === id
-        })
-        const children: FlowElement[] = []
-        childrenEdge.forEach((edge) => {
-            const foundChild = elements.find((elm) => elm.id === edge.id.split('-')[1])
-            if (foundChild) children.push(foundChild)
-        })
-        return children
-    }
-
-    const findParentById = (id: string): FlowElement | undefined => {
-        const parentEdge = elements.find((elm) => elm.id.includes('-') && elm.id.split('-')[1] === id)
-        if (parentEdge) {
-            const parent = elements.find((elm) => elm.id === parentEdge.id.split('-')[0])
-            return parent
-        }
-        return undefined
-    }
-
     const updateNode = (): void => {
-        const foundParent = selectedElement ? findParentById(selectedElement.id) : null
+        const foundParent = selectedElement ? findParentById(selectedElement.id, elements) : null
 
         if (foundParent) {
             const parent = foundParent as any
             const exceptParent = elements.filter((elm) => parent.id !== elm.id)
 
-            const children = findChildren(parent.id)
-
-            // handle children type checkbox
-            const completeChildren = children.filter((child) => {
-                return child.data && child.data.value && child.data.value.checked && child.id !== parent.id
-            })
-
-            // handle children type group
+            const children = findChildren(parent.id, elements)
+            const completeChildren = children.filter(filterCompletedChildren(parent.id))
             const childrenProgress = children
-                .filter(
-                    (child) =>
-                        // edge don't have data
-                        child.data &&
-                        // edge don't have value
-                        child.data.value &&
-                        // type check don't have progress
-                        child.data.value.progress &&
-                        // children not include this
-                        child.id !== parent.id &&
-                        // checkbox which level up to group still have checked
-                        !child.data.value.checked,
-                )
+                .filter(filterChildrenProgress(parent.id))
                 .map((child) => child.data.value.progress / children.length)
 
             const countProgress = (): number => {
@@ -178,20 +145,12 @@ const Home: React.FC = () => {
 
         setElements([...exceptSelected, updatedNode])
         setAction(ActionType.UPDATE_NODE)
-        // if (selectedElement) updateNode(selectedElement)
-        // onClose()
     }
 
-    const realAction = (): void => {
-        if (action === ActionType.ADD_CHECKLIST || action === ActionType.DETAIL) {
-            setShowModal(true)
-        } else if (action === ActionType.CHECK) {
-            updateCheck()
-        } else if (action === ActionType.UPDATE_NODE) {
-            updateNode()
-        } else {
-            window.alert(`Action ${action} will be available later`)
-        }
+    const deleteNode = (): void => {
+        const allChildren = selectedElement ? getAllChildrenId(selectedElement.id, [], elements) : []
+        setElements(elements.filter((elm) => elm.id !== selectedElement?.id && allChildren.includes(elm.id)))
+        onClose()
     }
 
     const onSubmit = (value: FormNodeModel): void => {
@@ -200,10 +159,8 @@ const Home: React.FC = () => {
 
         const element = selectedElement as {[key: string]: any}
         const exceptSelected = elements.filter((elm) => elm.id !== element.id)
-        const children = findChildren(element.id)
-        const completeChildren = children.filter(
-            (child) => child.data && child.data.value && child.data.value.checked && child.id !== element.id,
-        )
+        const children = findChildren(element.id, elements)
+        const completeChildren = children.filter(filterCompletedChildren(element.id))
         const countChildren = children.length
 
         const newChildId = `${element.id}.${countChildren}`
@@ -264,6 +221,21 @@ const Home: React.FC = () => {
             }
         } else {
             console.error('Elemenet not found')
+        }
+    }
+
+    const realAction = (): void => {
+        if (action === ActionType.ADD_CHECKLIST || action === ActionType.DETAIL) {
+            setShowModal(true)
+        } else if (action === ActionType.CHECK) {
+            updateCheck()
+        } else if (action === ActionType.UPDATE_NODE) {
+            updateNode()
+        } else if (action === ActionType.DELETE) {
+            if (confirm('Are you sure want to delete this item?')) deleteNode()
+            else onClose()
+        } else {
+            window.alert(`Action ${action} will be available later`)
         }
     }
 
