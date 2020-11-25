@@ -5,6 +5,8 @@ const ActionType = {
     DELETE: 'DELETE',
     CHECK: 'CHECK',
     UPDATE_NODE: 'UPDATE_NODE',
+    MOVE_RIGHT: 'MOVE_RIGHT',
+    MOVE_LEFT: 'MOVE_LEFT',
 }
 
 export default ActionType

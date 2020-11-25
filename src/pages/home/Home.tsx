@@ -20,6 +20,9 @@ import {
     filterChildrenProgress,
     filterCompletedChildren,
     filterExcept,
+    filterMyLeftSide,
+    filterMyRightSide,
+    filterOneLevel,
     findChildren,
     findParentById,
     findParentEdge,
@@ -28,13 +31,16 @@ import {
     RoadMapNode,
 } from '../../model/RoadmapNode'
 
+const WIDTH = 260
+const HEIGHT = 140
+
 const onLoad = (reactFlowInstance: OnLoadParams): void => {
     reactFlowInstance.fitView()
 }
 
 const Home: React.FC = () => {
     const [elements, setElements] = useState<RoadMapNode[]>([])
-    const [selectedElement, setSelectedElement] = useState<FlowElement>()
+    const [selectedElement, setSelectedElement] = useState<RoadMapNode>()
     const [action, setAction] = useState('')
     const [showModal, setShowModal] = useState(false)
 
@@ -165,6 +171,28 @@ const Home: React.FC = () => {
         const completeChildren = children.filter(filterCompletedChildren(element.id))
         const countChildren = children.length
 
+        // check if crashed or not
+        const moveTo = countChildren % 2 ? 1 : -1
+        const newX = (element.position?.x || 0) + WIDTH * Math.round(countChildren / 2) * moveTo
+        const newY = (element.position?.y || 0) + HEIGHT
+
+        const findPosition = (x: number, y: number) => (elm: RoadMapNode): boolean => {
+            if (elm.position) return elm.position.y === y && x === elm.position.x
+            else return false
+        }
+        const filterExceptEdge = (elm: RoadMapNode): boolean => !elm.id.includes('-')
+
+        const elementsExceptEdge = elements.filter(filterExceptEdge)
+
+        let movedX = newX
+        for (let i = 1; i < Infinity; i++) {
+            if (elementsExceptEdge.find(findPosition(movedX, newY))) {
+                movedX += WIDTH * i * moveTo
+            } else {
+                i = Infinity
+            }
+        }
+
         const newChildId = `${element.id}.${countChildren}`
 
         // when checklist has a child, it will become a group
@@ -208,10 +236,8 @@ const Home: React.FC = () => {
                             },
                         },
                         position: {
-                            x:
-                                (element.position?.x || 0) +
-                                260 * Math.round(countChildren / 2) * (countChildren % 2 ? 1 : -1),
-                            y: (element.position?.y || 0) + 140,
+                            x: movedX,
+                            y: newY,
                         },
                     },
                     edge,
@@ -252,6 +278,36 @@ const Home: React.FC = () => {
         onClose()
     }
 
+    const move = (actionType: string): void => {
+        let moveTo = 0
+        if (actionType === ActionType.MOVE_RIGHT) moveTo = 1
+        else moveTo = -1
+
+        if (selectedElement && selectedElement.position) {
+            const neighborNode = [
+                selectedElement,
+                ...elements
+                    .filter(filterOneLevel(selectedElement.position.y))
+                    .filter(
+                        moveTo
+                            ? filterMyRightSide(selectedElement.position.x)
+                            : filterMyLeftSide(selectedElement.position.x),
+                    ),
+            ]
+            const exceptNeighbor = elements.filter(filterExcept(neighborNode.map((node) => node.id)))
+            const updatedNode = neighborNode.map((node) => ({
+                ...node,
+                position: {
+                    x: (node.position?.x || 0) + WIDTH * moveTo,
+                    y: node.position?.y || 0,
+                },
+            }))
+
+            setElements([...exceptNeighbor, ...updatedNode])
+            onClose()
+        }
+    }
+
     const realAction = (): void => {
         if (action === ActionType.ADD_CHECKLIST || action === ActionType.DETAIL) {
             setShowModal(true)
@@ -264,6 +320,8 @@ const Home: React.FC = () => {
             else onClose()
         } else if (action === ActionType.COLLAPSE) {
             collapse()
+        } else if (action === ActionType.MOVE_LEFT || action === ActionType.MOVE_RIGHT) {
+            move(action)
         } else {
             window.alert(`Action ${action} will be available later`)
         }

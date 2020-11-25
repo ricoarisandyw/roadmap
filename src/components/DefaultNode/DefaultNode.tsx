@@ -69,6 +69,12 @@ const DefaultNode: React.FC<DefaultNodeProps> = (props: DefaultNodeProps) => {
                 <div className="item" onClick={(): void => onMenuSelected(ActionType.COLLAPSE)}>
                     Expand/Collapse
                 </div>
+                <div className="item" onClick={(): void => onMenuSelected(ActionType.MOVE_RIGHT)}>
+                    Move to Right
+                </div>
+                <div className="item" onClick={(): void => onMenuSelected(ActionType.MOVE_LEFT)}>
+                    Move to Left
+                </div>
                 <div className="item-danger" onClick={(): void => onMenuSelected(ActionType.DELETE)}>
                     Delete
                 </div>

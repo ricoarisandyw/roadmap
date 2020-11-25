@@ -100,3 +100,12 @@ export const filterExcept = (idList: string[]) => (element: RoadMapNode): boolea
 export const findParentEdge = (id: string) => (element: RoadMapNode): boolean => {
     return element.id.includes('-') && element.id.split('-')[1] === id
 }
+
+export const filterOneLevel = (level: number) => (element: RoadMapNode): boolean =>
+    Boolean(element.position && element.position.y === level)
+
+export const filterMyRightSide = (x: number) => (element: RoadMapNode): boolean =>
+    Boolean(element.position && element.position.x > x)
+
+export const filterMyLeftSide = (x: number) => (element: RoadMapNode): boolean =>
+    Boolean(element.position && element.position.x < x)

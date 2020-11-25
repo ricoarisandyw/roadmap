@@ -1,8 +1,9 @@
 import React from 'react'
-import {FlowElement} from 'react-flow-renderer'
+
+import {RoadMapNode} from '../../model/RoadmapNode'
 
 interface DetailNodeProps {
-    node: FlowElement
+    node: RoadMapNode
     onClose: () => void
 }
 
