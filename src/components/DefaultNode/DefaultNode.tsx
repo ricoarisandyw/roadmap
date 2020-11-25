@@ -1,12 +1,15 @@
 import React, {useState} from 'react'
 
+import Icons from '../Icons/Icons'
+
 import ThreeDot from './ThreeDot'
 import ActionType from './ActionType'
+
 import './DefaultNode.scss'
 
 interface DefaultNodeProps {
     label: string
-    type: 'GROUP' | 'CHECK'
+    type: 'GROUP' | 'CHECK' | 'OTHERS'
     checked?: boolean
     progress?: number
     onAction: (action: string) => void
@@ -18,6 +21,12 @@ const DefaultNode: React.FC<DefaultNodeProps> = (props: DefaultNodeProps) => {
     const onMenuSelected = (action: string): void => {
         setShowMenu(false)
         props.onAction(action)
+    }
+
+    const renderCheck = (): JSX.Element => {
+        if (props.checked)
+            return <Icons.Check className="my-auto" onClick={(): void => props.onAction(ActionType.CHECK)} />
+        else return <Icons.Uncheck className="my-auto" onClick={(): void => props.onAction(ActionType.CHECK)} />
     }
 
     return (
@@ -35,6 +44,7 @@ const DefaultNode: React.FC<DefaultNodeProps> = (props: DefaultNodeProps) => {
                             type="checkbox"
                         />
                     ) : null}
+                    {props.type === 'OTHERS' ? renderCheck() : null}
                 </div>
                 {props.type === 'GROUP' ? (
                     <div className="progress">

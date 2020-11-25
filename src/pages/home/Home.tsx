@@ -25,6 +25,7 @@ import {
     findParentEdge,
     getAllChildren,
     getAllChildrenId,
+    RoadMapNode,
 } from '../../model/RoadmapNode'
 
 const onLoad = (reactFlowInstance: OnLoadParams): void => {
@@ -32,7 +33,7 @@ const onLoad = (reactFlowInstance: OnLoadParams): void => {
 }
 
 const Home: React.FC = () => {
-    const [elements, setElements] = useState<FlowElement[]>([])
+    const [elements, setElements] = useState<RoadMapNode[]>([])
     const [selectedElement, setSelectedElement] = useState<FlowElement>()
     const [action, setAction] = useState('')
     const [showModal, setShowModal] = useState(false)
@@ -48,30 +49,31 @@ const Home: React.FC = () => {
     }
 
     const onElementsRemove = (elementsToRemove: Elements): void =>
-        setElements((els) => removeElements(elementsToRemove, els))
-    const onConnect = (params: Edge | Connection): void => setElements((els) => addEdge(params, els))
+        setElements((els) => removeElements(elementsToRemove, els as FlowElement[]))
+
+    const onConnect = (params: Edge | Connection): void => setElements((els) => addEdge(params, els as FlowElement[]))
 
     const onElementClick = (event: React.MouseEvent<Element, MouseEvent>, element: FlowElement): void => {
         setSelectedElement(element)
     }
 
     useEffect(() => {
-        setElements([
-            {
-                id: '0',
-                position: {
-                    x: 0,
-                    y: 0,
-                },
-                data: {
-                    label: <DefaultNode progress={20} type="GROUP" label="HEAVEN" onAction={onMenuSelected} />,
-                    value: {
-                        label: 'HEAVEN',
-                        progress: 0,
-                    },
+        const initialValue: RoadMapNode = {
+            id: '0',
+            position: {
+                x: 0,
+                y: 0,
+            },
+            data: {
+                label: <DefaultNode progress={20} type="GROUP" label="HEAVEN" onAction={onMenuSelected} />,
+                value: {
+                    label: 'HEAVEN',
+                    progress: 0,
                 },
             },
-        ])
+        }
+
+        setElements([initialValue])
     }, [])
 
     const updateNode = (): void => {
@@ -85,7 +87,7 @@ const Home: React.FC = () => {
             const completeChildren = children.filter(filterCompletedChildren(parent.id))
             const childrenProgress = children
                 .filter(filterChildrenProgress(parent.id))
-                .map((child) => child.data.value.progress / children.length)
+                .map((child) => (child.data?.value.progress || 0) / children.length)
 
             const countProgress = (): number => {
                 if (childrenProgress.length > 1)
@@ -97,7 +99,6 @@ const Home: React.FC = () => {
             const newProgress = progressFromCheck + countProgress()
             const updatedNode = {
                 ...parent,
-                id: parent.id,
                 data: {
                     label: (
                         <DefaultNode
@@ -112,10 +113,6 @@ const Home: React.FC = () => {
                         progress: newProgress,
                     },
                 },
-                position: {
-                    x: parent.position.x,
-                    y: parent.position.y,
-                },
             }
             setElements([...exceptParent, updatedNode])
 
@@ -127,34 +124,31 @@ const Home: React.FC = () => {
 
     const updateCheck = (): void => {
         // update parent first
-        const element = selectedElement as {[key: string]: any}
+        const element = selectedElement as RoadMapNode
         const exceptSelected = elements.filter((elm) => elm.id !== element.id)
 
-        const updatedNode = {
-            ...element,
-            id: element.id,
-            data: {
-                label: element.data.label,
-                value: {
-                    ...element.data.value.label,
-                    checked: !element.data.value.checked,
+        if (element.data) {
+            const updatedNode = {
+                ...element,
+                data: {
+                    label: element.data.label,
+                    value: {
+                        ...element.data.value,
+                        checked: !element.data?.value.checked,
+                    },
                 },
-            },
-            position: {
-                x: element.position.x,
-                y: element.position.y,
-            },
-        }
+            }
 
-        setElements([...exceptSelected, updatedNode])
-        setAction(ActionType.UPDATE_NODE)
+            setElements([...exceptSelected, updatedNode])
+            setAction(ActionType.UPDATE_NODE)
+        }
     }
 
     const deleteNode = (): void => {
-        const element = selectedElement as any
-        const parentEdge = elements.find(findParentEdge(element.id))
-        const exceptChildren = elements.filter(
-            filterExcept([element.id, ...getAllChildrenId(element.id, [], elements), parentEdge?.id]),
+        const element = selectedElement as RoadMapNode
+        const parentEdge = (elements as FlowElement[]).find(findParentEdge(element.id)) as RoadMapNode
+        const exceptChildren = (elements as FlowElement[]).filter(
+            filterExcept([element.id, ...getAllChildrenId(element.id, [], elements as FlowElement[]), parentEdge.id]),
         )
 
         setElements(exceptChildren)
@@ -165,9 +159,9 @@ const Home: React.FC = () => {
         // avoid useEffect listener for selectedElement
         onClose()
 
-        const element = selectedElement as {[key: string]: any}
+        const element = selectedElement as RoadMapNode
         const exceptSelected = elements.filter((elm) => elm.id !== element.id)
-        const children = findChildren(element.id, elements)
+        const children = findChildren(element.id, elements as FlowElement[])
         const completeChildren = children.filter(filterCompletedChildren(element.id))
         const countChildren = children.length
 
@@ -176,24 +170,19 @@ const Home: React.FC = () => {
         // when checklist has a child, it will become a group
         const renewalParent = {
             ...element,
-            id: element?.id || '0',
             data: {
                 label: (
                     <DefaultNode
                         type="GROUP"
                         progress={(completeChildren.length / (countChildren + 1)) * 100}
-                        label={element?.data.value.label}
+                        label={element.data?.value.label || ''}
                         onAction={onMenuSelected}
                     />
                 ),
                 value: {
-                    label: element?.data.value.label,
+                    label: element.data?.value.label || '',
                     progress: 0,
                 },
-            },
-            position: {
-                x: element.position.x,
-                y: element.position.y,
             },
         }
 
@@ -219,8 +208,10 @@ const Home: React.FC = () => {
                             },
                         },
                         position: {
-                            x: element.position.x + 260 * Math.round(countChildren / 2) * (countChildren % 2 ? 1 : -1),
-                            y: element.position.y + 140,
+                            x:
+                                (element.position?.x || 0) +
+                                260 * Math.round(countChildren / 2) * (countChildren % 2 ? 1 : -1),
+                            y: (element.position?.y || 0) + 140,
                         },
                     },
                     edge,
@@ -295,7 +286,7 @@ const Home: React.FC = () => {
                 {action === ActionType.ADD_CHECKLIST ? <FormNode onSubmit={onSubmit} onClose={onClose} /> : null}
             </div>
             <ReactFlow
-                elements={elements}
+                elements={elements as FlowElement[]}
                 onElementsRemove={onElementsRemove}
                 onConnect={onConnect}
                 onLoad={onLoad}
