@@ -1,6 +1,8 @@
 import React, {useState} from 'react'
+import {useDispatch} from 'react-redux'
 
 import Icons from '../Icons/Icons'
+import {updateAction} from '../../redux/actions/ActionActions'
 
 import ThreeDot from './ThreeDot'
 import ActionType from './ActionType'
@@ -8,25 +10,25 @@ import ActionType from './ActionType'
 import './DefaultNode.scss'
 
 interface DefaultNodeProps {
-    label: string
+    title: string
     type: 'GROUP' | 'CHECK' | 'OTHERS'
     checked?: boolean
     progress?: number
-    onAction: (action: string) => void
 }
 
 const DefaultNode: React.FC<DefaultNodeProps> = (props: DefaultNodeProps) => {
     const [showMenu, setShowMenu] = useState(false)
+    const dispatch = useDispatch()
 
-    const onMenuSelected = (action: string): void => {
+    const onMenuSelected = (selectedAction: string): void => {
         setShowMenu(false)
-        props.onAction(action)
+        dispatch(updateAction(selectedAction))
     }
 
     const renderCheck = (): JSX.Element => {
         if (props.checked)
-            return <Icons.Check className="my-auto" onClick={(): void => props.onAction(ActionType.CHECK)} />
-        else return <Icons.Uncheck className="my-auto" onClick={(): void => props.onAction(ActionType.CHECK)} />
+            return <Icons.Check className="my-auto" onClick={(): void => onMenuSelected(ActionType.CHECK)} />
+        else return <Icons.Uncheck className="my-auto" onClick={(): void => onMenuSelected(ActionType.CHECK)} />
     }
 
     return (
@@ -34,12 +36,12 @@ const DefaultNode: React.FC<DefaultNodeProps> = (props: DefaultNodeProps) => {
             <div className="w-100 my-auto">
                 <div className={['label d-flex', props.type === 'CHECK' ? 'justify-content-center' : ''].join(' ')}>
                     <div className={['flex-grow-1', props.type === 'CHECK' ? 'text-left' : 'text-center'].join(' ')}>
-                        {props.label}
+                        {props.title}
                     </div>
                     {props.type === 'CHECK' ? (
                         <input
                             checked={props.checked}
-                            onChange={(): void => props.onAction(ActionType.CHECK)}
+                            onChange={(): void => onMenuSelected(ActionType.CHECK)}
                             className="check form-control"
                             type="checkbox"
                         />

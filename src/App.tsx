@@ -1,6 +1,6 @@
 import React from 'react'
 import './App.scss'
-import {hot} from 'react-hot-loader/root'
+import {hot} from 'react-hot-loader'
 
 import Route from './pages/routes'
 
@@ -12,4 +12,4 @@ function App() {
     )
 }
 
-export default hot(App)
+export default hot(module)(App)

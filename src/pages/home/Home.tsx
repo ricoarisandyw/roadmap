@@ -11,6 +11,7 @@ import ReactFlow, {
     OnLoadParams,
     FlowElement,
 } from 'react-flow-renderer'
+import {useDispatch, useSelector} from 'react-redux'
 
 import DetailNode from '../../components/DetailNode/DetailNode'
 import DefaultNode from '../../components/DefaultNode/DefaultNode'
@@ -28,8 +29,15 @@ import {
     findParentEdge,
     getAllChildren,
     getAllChildrenId,
+    mapToModel,
     RoadMapNode,
 } from '../../model/RoadmapNode'
+import {convertNodeToFlow} from '../../model/NodeModel'
+import {RootState} from '../../redux/reducers'
+import {ActionState} from '../../redux/reducers/ActionReducers'
+import {updateAction} from '../../redux/actions/ActionActions'
+
+import {NodeSeed} from './DataSeed'
 
 const WIDTH = 260
 const HEIGHT = 140
@@ -39,18 +47,17 @@ const onLoad = (reactFlowInstance: OnLoadParams): void => {
 }
 
 const Home: React.FC = () => {
+    const dispatch = useDispatch()
+
+    const {action} = useSelector<RootState, ActionState>((state) => state.action)
+
     const [elements, setElements] = useState<RoadMapNode[]>([])
     const [selectedElement, setSelectedElement] = useState<RoadMapNode>()
-    const [action, setAction] = useState('')
     const [showModal, setShowModal] = useState(false)
-
-    const onMenuSelected = (actionType: string): void => {
-        setAction(actionType)
-    }
 
     const onClose = (): void => {
         setShowModal(false)
-        setAction('')
+        dispatch(updateAction(''))
         setSelectedElement(undefined)
     }
 
@@ -64,22 +71,23 @@ const Home: React.FC = () => {
     }
 
     useEffect(() => {
-        const initialValue: RoadMapNode = {
-            id: '0',
-            position: {
-                x: 0,
-                y: 0,
-            },
-            data: {
-                label: <DefaultNode progress={20} type="GROUP" label="HEAVEN" onAction={onMenuSelected} />,
-                value: {
-                    label: 'HEAVEN',
-                    progress: 0,
-                },
-            },
-        }
+        const roadmapData = localStorage.getItem('roadmap_data')
+        if (roadmapData) {
+            console.log(roadmapData)
+            setElements(
+                (JSON.parse(roadmapData) as RoadMapNode[]).map((node) => ({
+                    ...node,
+                    position: {
+                        x: 0,
+                        y: 0,
+                    },
+                })),
+            )
+        } else {
+            const initialValue = convertNodeToFlow(NodeSeed)
 
-        setElements([initialValue])
+            setElements(initialValue)
+        }
     }, [])
 
     const updateNode = (): void => {
@@ -106,14 +114,7 @@ const Home: React.FC = () => {
             const updatedNode = {
                 ...parent,
                 data: {
-                    label: (
-                        <DefaultNode
-                            type="GROUP"
-                            progress={newProgress}
-                            label={parent.data.value.label}
-                            onAction={onMenuSelected}
-                        />
-                    ),
+                    label: <DefaultNode type="GROUP" progress={newProgress} title={parent.data.value.label} />,
                     value: {
                         label: parent.data.value.label,
                         progress: newProgress,
@@ -146,13 +147,14 @@ const Home: React.FC = () => {
             }
 
             setElements([...exceptSelected, updatedNode])
-            setAction(ActionType.UPDATE_NODE)
+            dispatch(updateAction(ActionType.UPDATE_NODE))
         }
     }
 
     const deleteNode = (): void => {
         const element = selectedElement as RoadMapNode
         const parentEdge = (elements as FlowElement[]).find(findParentEdge(element.id)) as RoadMapNode
+        console.log('DELETE NODE', element.id, getAllChildren(element.id, [], elements), parentEdge)
         const exceptChildren = (elements as FlowElement[]).filter(
             filterExcept([element.id, ...getAllChildrenId(element.id, [], elements as FlowElement[]), parentEdge.id]),
         )
@@ -171,45 +173,77 @@ const Home: React.FC = () => {
         const completeChildren = children.filter(filterCompletedChildren(element.id))
         const countChildren = children.length
 
+        let biggestId
+        if (children.length > 1)
+            biggestId = children.reduce((prev, current) => {
+                if (parseInt(prev.id, 10) > parseInt(current.id, 10)) {
+                    return prev
+                } else {
+                    return current
+                }
+            }).id
+        else if (children.length === 1) biggestId = children[0].id
+        else biggestId = 0
+
         // check if crashed or not
-        const moveTo = countChildren % 2 ? 1 : -1
-        const newX = (element.position?.x || 0) + WIDTH * Math.round(countChildren / 2) * moveTo
         const newY = (element.position?.y || 0) + HEIGHT
 
         const findPosition = (x: number, y: number) => (elm: RoadMapNode): boolean => {
-            if (elm.position) return elm.position.y === y && x === elm.position.x
+            if (elm.position && elm.position.y === y && x === elm.position.x) return true
             else return false
         }
         const filterExceptEdge = (elm: RoadMapNode): boolean => !elm.id.includes('-')
 
         const elementsExceptEdge = elements.filter(filterExceptEdge)
 
-        let movedX = newX
+        const AbsParse = (id: string): number => Math.abs(parseInt(id, 10))
+
+        // find from 0
+        let movedX = 0
         for (let i = 1; i < Infinity; i++) {
-            if (elementsExceptEdge.find(findPosition(movedX, newY))) {
-                movedX += WIDTH * i * moveTo
+            // realZero means one line vertically
+            const realZero = movedX + (element.position?.x || 0)
+            const crashed = elementsExceptEdge.find(findPosition(realZero, newY))
+            if (crashed) {
+                movedX += WIDTH * i * (i % 2 ? 1 : -1)
+                // find priority
+                // if my id < parent id of detected crash id then I will be prioritized
+                const crashedParent = findParentById(crashed.id, elements)
+                // after found priority then find out prioritized position
+                if (crashedParent && AbsParse(element.id) < AbsParse(crashed.id)) {
+                    movedX += WIDTH
+                    setSelectedElement(crashedParent)
+                    if (parseInt(element.id, 10) < parseInt(crashed.id, 10))
+                        dispatch(updateAction(ActionType.MOVE_RIGHT))
+                    else dispatch(updateAction(ActionType.MOVE_LEFT))
+                } else if (parseInt(element.id, 10) < parseInt(crashed.id, 10))
+                    dispatch(updateAction(ActionType.MOVE_RIGHT))
+                else dispatch(updateAction(ActionType.MOVE_LEFT))
+                // use position to move element
             } else {
                 i = Infinity
             }
         }
+        movedX += element.position?.x || 0
 
-        const newChildId = `${element.id}.${countChildren}`
+        const newChildId = `${element.id}.${biggestId}`
 
         // when checklist has a child, it will become a group
-        const renewalParent = {
+        const renewalParent: RoadMapNode = {
             ...element,
             data: {
                 label: (
                     <DefaultNode
                         type="GROUP"
                         progress={(completeChildren.length / (countChildren + 1)) * 100}
-                        label={element.data?.value.label || ''}
-                        onAction={onMenuSelected}
+                        title={element.data?.value.title || ''}
                     />
                 ),
                 value: {
-                    label: element.data?.value.label || '',
+                    id: element.id,
+                    title: element.data?.value.title || '-',
                     progress: 0,
+                    parent: element.data?.value.parent || '',
                 },
             },
         }
@@ -228,11 +262,13 @@ const Home: React.FC = () => {
                     {
                         id: newChildId,
                         data: {
-                            label: <DefaultNode type="CHECK" label={value.title} onAction={onMenuSelected} />,
+                            label: <DefaultNode type="CHECK" title={value.title} />,
                             value: {
-                                label: value.title,
+                                id: renewalParent.id,
+                                title: value.title,
                                 description: value.description,
                                 checked: false,
+                                parent: renewalParent.id,
                             },
                         },
                         position: {
@@ -333,8 +369,29 @@ const Home: React.FC = () => {
         if (selectedElement && action !== '') realAction()
     }, [selectedElement, action])
 
+    const onSave = (): void => {
+        localStorage.setItem('roadmap_data', JSON.stringify(elements.map(mapToModel)))
+        window.alert('Element Saved')
+    }
+
+    const onDelete = (): void => {
+        localStorage.removeItem('roadmap_data')
+        window.alert('Element Deleted')
+    }
+
     return (
         <div className="Home fullscreen m-5">
+            <div>
+                Toolbar :
+                <div className="d-flex">
+                    <button className="btn btn-success" onClick={onSave}>
+                        SAVE
+                    </button>
+                    <button className="btn btn-danger" onClick={onDelete}>
+                        DELETE
+                    </button>
+                </div>
+            </div>
             <div className={['modal fade', showModal ? 'show' : 'd-none'].join(' ')}>
                 {selectedElement && action === ActionType.DETAIL ? (
                     <DetailNode node={selectedElement} onClose={onClose} />

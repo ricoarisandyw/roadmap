@@ -7,10 +7,13 @@ export interface RoadMap {
     data?: {
         label: JSX.Element
         value: {
-            label: string
+            id: string
+            title: string
             description?: string
             progress?: number
             checked?: boolean
+            dueDate?: Date
+            parent: string
         }
     }
     position?: {
@@ -98,6 +101,7 @@ export const getAllChildren = (
 export const filterExcept = (idList: string[]) => (element: RoadMapNode): boolean => !idList.includes(element.id)
 
 export const findParentEdge = (id: string) => (element: RoadMapNode): boolean => {
+    console.log(id, element)
     return element.id.includes('-') && element.id.split('-')[1] === id
 }
 
@@ -109,3 +113,15 @@ export const filterMyRightSide = (x: number) => (element: RoadMapNode): boolean 
 
 export const filterMyLeftSide = (x: number) => (element: RoadMapNode): boolean =>
     Boolean(element.position && element.position.x < x)
+
+export const mapToModel = (node: RoadMapNode): any => {
+    return {
+        id: node.id,
+        description: node.data?.value.description || '',
+        progress: node.data?.value.progress || 0,
+        roadmapId: 1,
+        source: node.source,
+        target: node.target,
+        title: node.data?.value.title || 'untitled',
+    }
+}
