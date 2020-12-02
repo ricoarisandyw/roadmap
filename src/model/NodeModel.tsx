@@ -31,6 +31,88 @@ export const extractChildren = (nodeId: string, nodeList: NodeModel[], container
     }
 }
 
+export const generateChild = (
+    currentChildList: RoadMapNode[],
+    allNode: NodeModel[],
+    parentId: string,
+    parentX = 0,
+    parentLevel = 1,
+): RoadMapNode[] => {
+    const parent = allNode.find((node) => node.id === parentId)
+    const children = allNode.filter(filterNodeChildren(parentId))
+
+    if (children.length > 0) {
+        return children
+            .map((child, i) =>
+                generateChild(
+                    [
+                        ...currentChildList,
+                        {
+                            id: `${parent?.id}-${child.id}`,
+                            source: parent?.id,
+                            target: child.id,
+                        },
+                        {
+                            id: child.id,
+                            data: {
+                                label: (
+                                    <DefaultNode
+                                        type={
+                                            allNode.filter(filterNodeChildren(child.id)).length > 0 ? 'GROUP' : 'CHECK'
+                                        }
+                                        title={child.title}
+                                        progress={child.progress}
+                                    />
+                                ),
+                                value: {
+                                    id: child.id,
+                                    parent: parentId,
+                                    title: child.title,
+                                    description: child.description,
+                                    dueDate: child.dueDate,
+                                    progress: child.progress,
+                                },
+                            },
+                            position: {
+                                x: parentX + i * 260,
+                                y: parentLevel * 140,
+                            },
+                        },
+                    ],
+                    allNode,
+                    child.id,
+                    parentX + i * 260,
+                    parentLevel + 1,
+                ),
+            )
+            .reduce((container, current) => [...container, ...current], [])
+        // } else if (parent && !currentChildList.find((node) => node.id === parent.id)) {
+        //     return [
+        //         ...currentChildList,
+        //         {
+        //             id: parent.id,
+        //             data: {
+        //                 label: <div>No Child {parent.title}</div>,
+        //                 value: {
+        //                     id: parent.id,
+        //                     parent: parentId,
+        //                     title: parent.title,
+        //                     description: parent.description,
+        //                     dueDate: parent.dueDate,
+        //                     progress: parent.progress,
+        //                 },
+        //             },
+        //             position: {
+        //                 x: 260,
+        //                 y: parentLevel * 140,
+        //             },
+        //         },
+        //     ]
+    } else {
+        return currentChildList
+    }
+}
+
 export const convertNodeToFlow = (nodeList: NodeModel[]): RoadMapNode[] => {
     const roadmapList: RoadMapNode[] = []
 
@@ -55,43 +137,8 @@ export const convertNodeToFlow = (nodeList: NodeModel[]): RoadMapNode[] => {
             },
         })
 
-        console.log('Extract Children', extractChildren(grandParent.id, nodeList, []))
-
-        // it just for first y
-        nodeList.filter(filterNodeChildren(grandParent.id)).forEach((child, i) => {
-            const nodeChild = child as NodeModel
-            roadmapList.push({
-                id: child.id,
-                data: {
-                    label: (
-                        <DefaultNode
-                            title={nodeChild.title || '-'}
-                            type={nodeList.filter(filterNodeChildren(child.id)).length > 0 ? 'GROUP' : 'CHECK'}
-                            progress={nodeChild.progress}
-                        />
-                    ),
-                    value: {
-                        id: child.id,
-                        title: nodeChild.title || '',
-                        dueDate: nodeChild.dueDate,
-                        description: nodeChild.description,
-                        progress: nodeChild.progress,
-                        parent: grandParent.id,
-                    },
-                },
-                position: {
-                    x: 0 + i * 260,
-                    y: 140,
-                },
-            })
-            roadmapList.push({
-                id: `${grandParent.id}-${child.id}`,
-                source: child.parent,
-                target: child.id,
-            })
-        })
+        generateChild([], nodeList, grandParent.id).forEach((node) => roadmapList.push(node))
     }
 
-    console.log('Roadmap List', roadmapList)
     return roadmapList
 }
