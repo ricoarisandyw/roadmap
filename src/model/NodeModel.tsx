@@ -19,6 +19,18 @@ const findNodeById = (nodeId: string) => (node: NodeModel): boolean => node.id =
 
 const filterNodeChildren = (nodeId: string) => (node: NodeModel): boolean => node.parent === nodeId
 
+export const extractChildren = (nodeId: string, nodeList: NodeModel[], container: NodeModel[]): NodeModel[] => {
+    const nodeChildren = nodeList.filter(filterNodeChildren(nodeId))
+    if (nodeChildren.length > 0) {
+        const all = nodeChildren.map((node) => extractChildren(node.id, nodeList, [...container, node]))
+        return all.reduce((first, current) => [...first, ...current], [])
+    } else {
+        const foundNode = nodeList.find(findNodeById(nodeId))
+        if (foundNode && !container.map((con) => con.id).includes(foundNode.id)) return [...container, foundNode]
+        else return []
+    }
+}
+
 export const convertNodeToFlow = (nodeList: NodeModel[]): RoadMapNode[] => {
     const roadmapList: RoadMapNode[] = []
 
@@ -33,7 +45,6 @@ export const convertNodeToFlow = (nodeList: NodeModel[]): RoadMapNode[] => {
                     title: grandParent?.title,
                     description: grandParent?.description,
                     progress: grandParent?.progress,
-                    checked: grandParent?.progress === 100,
                     dueDate: grandParent?.dueDate,
                     parent: '',
                 },
@@ -43,6 +54,8 @@ export const convertNodeToFlow = (nodeList: NodeModel[]): RoadMapNode[] => {
                 y: 0,
             },
         })
+
+        console.log('Extract Children', extractChildren(grandParent.id, nodeList, []))
 
         // it just for first y
         nodeList.filter(filterNodeChildren(grandParent.id)).forEach((child, i) => {
@@ -54,14 +67,12 @@ export const convertNodeToFlow = (nodeList: NodeModel[]): RoadMapNode[] => {
                         <DefaultNode
                             title={nodeChild.title || '-'}
                             type={nodeList.filter(filterNodeChildren(child.id)).length > 0 ? 'GROUP' : 'CHECK'}
-                            checked={Boolean(nodeChild.progress)}
                             progress={nodeChild.progress}
                         />
                     ),
                     value: {
                         id: child.id,
                         title: nodeChild.title || '',
-                        checked: nodeChild.progress === 100,
                         dueDate: nodeChild.dueDate,
                         description: nodeChild.description,
                         progress: nodeChild.progress,

@@ -18,6 +18,7 @@ import DefaultNode from '../../components/DefaultNode/DefaultNode'
 import ActionType from '../../components/DefaultNode/ActionType'
 import FormNode, {FormNodeModel} from '../../components/FormNode/FormNode'
 import {
+    convertToModel,
     filterChildrenProgress,
     filterCompletedChildren,
     filterExcept,
@@ -29,10 +30,9 @@ import {
     findParentEdge,
     getAllChildren,
     getAllChildrenId,
-    mapToModel,
     RoadMapNode,
 } from '../../model/RoadmapNode'
-import {convertNodeToFlow} from '../../model/NodeModel'
+import NodeModel, {convertNodeToFlow} from '../../model/NodeModel'
 import {RootState} from '../../redux/reducers'
 import {ActionState} from '../../redux/reducers/ActionReducers'
 import {updateAction} from '../../redux/actions/ActionActions'
@@ -55,9 +55,9 @@ const Home: React.FC = () => {
     const [selectedElement, setSelectedElement] = useState<RoadMapNode>()
     const [showModal, setShowModal] = useState(false)
 
-    const onClose = (): void => {
+    const clearAction = (): void => {
         setShowModal(false)
-        dispatch(updateAction(''))
+        dispatch(updateAction(ActionType.STAND_BY))
         setSelectedElement(undefined)
     }
 
@@ -73,16 +73,7 @@ const Home: React.FC = () => {
     useEffect(() => {
         const roadmapData = localStorage.getItem('roadmap_data')
         if (roadmapData) {
-            console.log(roadmapData)
-            setElements(
-                (JSON.parse(roadmapData) as RoadMapNode[]).map((node) => ({
-                    ...node,
-                    position: {
-                        x: 0,
-                        y: 0,
-                    },
-                })),
-            )
+            setElements(convertNodeToFlow(JSON.parse(roadmapData) as NodeModel[]))
         } else {
             const initialValue = convertNodeToFlow(NodeSeed)
 
@@ -114,9 +105,9 @@ const Home: React.FC = () => {
             const updatedNode = {
                 ...parent,
                 data: {
-                    label: <DefaultNode type="GROUP" progress={newProgress} title={parent.data.value.label} />,
+                    label: <DefaultNode type="GROUP" progress={newProgress} title={parent.data.value.title} />,
                     value: {
-                        label: parent.data.value.label,
+                        title: parent.data.value.title,
                         progress: newProgress,
                     },
                 },
@@ -125,7 +116,7 @@ const Home: React.FC = () => {
 
             setSelectedElement(parent)
         } else {
-            onClose()
+            clearAction()
         }
     }
 
@@ -133,15 +124,22 @@ const Home: React.FC = () => {
         // update parent first
         const element = selectedElement as RoadMapNode
         const exceptSelected = elements.filter((elm) => elm.id !== element.id)
+        const newProgress = element.data?.value.progress === 100 ? 0 : 100
 
         if (element.data) {
             const updatedNode = {
                 ...element,
                 data: {
-                    label: element.data.label,
+                    label: (
+                        <DefaultNode
+                            type="CHECK"
+                            progress={newProgress}
+                            title={element.data?.value.title || 'untitled'}
+                        />
+                    ),
                     value: {
                         ...element.data.value,
-                        checked: !element.data?.value.checked,
+                        progress: newProgress,
                     },
                 },
             }
@@ -160,12 +158,12 @@ const Home: React.FC = () => {
         )
 
         setElements(exceptChildren)
-        onClose()
+        clearAction()
     }
 
     const onSubmit = (value: FormNodeModel): void => {
         // avoid useEffect listener for selectedElement
-        onClose()
+        clearAction()
 
         const element = selectedElement as RoadMapNode
         const exceptSelected = elements.filter((elm) => elm.id !== element.id)
@@ -267,7 +265,7 @@ const Home: React.FC = () => {
                                 id: renewalParent.id,
                                 title: value.title,
                                 description: value.description,
-                                checked: false,
+                                progress: 0,
                                 parent: renewalParent.id,
                             },
                         },
@@ -311,7 +309,7 @@ const Home: React.FC = () => {
         }))
 
         setElements([...exceptChildrenAndElement, ...updatedChildren, updatedElement])
-        onClose()
+        clearAction()
     }
 
     const move = (actionType: string): void => {
@@ -340,7 +338,7 @@ const Home: React.FC = () => {
             }))
 
             setElements([...exceptNeighbor, ...updatedNode])
-            onClose()
+            clearAction()
         }
     }
 
@@ -353,13 +351,11 @@ const Home: React.FC = () => {
             updateNode()
         } else if (action === ActionType.DELETE) {
             if (confirm('Are you sure want to delete this item?')) deleteNode()
-            else onClose()
+            else clearAction()
         } else if (action === ActionType.COLLAPSE) {
             collapse()
         } else if (action === ActionType.MOVE_LEFT || action === ActionType.MOVE_RIGHT) {
             move(action)
-        } else {
-            window.alert(`Action ${action} will be available later`)
         }
     }
 
@@ -370,8 +366,9 @@ const Home: React.FC = () => {
     }, [selectedElement, action])
 
     const onSave = (): void => {
-        localStorage.setItem('roadmap_data', JSON.stringify(elements.map(mapToModel)))
-        window.alert('Element Saved')
+        if (window.confirm(JSON.stringify(convertToModel(elements)))) {
+            localStorage.setItem('roadmap_data', JSON.stringify(convertToModel(elements)))
+        }
     }
 
     const onDelete = (): void => {
@@ -381,6 +378,7 @@ const Home: React.FC = () => {
 
     return (
         <div className="Home fullscreen m-5">
+            {action}
             <div>
                 Toolbar :
                 <div className="d-flex">
@@ -392,13 +390,15 @@ const Home: React.FC = () => {
                     </button>
                 </div>
             </div>
-            <div className={['modal fade', showModal ? 'show' : 'd-none'].join(' ')}>
+            <div
+                className={['modal fade', showModal && !(action === ActionType.STAND_BY) ? 'show' : 'd-none'].join(' ')}
+            >
                 {selectedElement && action === ActionType.DETAIL ? (
-                    <DetailNode node={selectedElement} onClose={onClose} />
+                    <DetailNode node={selectedElement} onClose={clearAction} />
                 ) : (
                     ''
                 )}
-                {action === ActionType.ADD_CHECKLIST ? <FormNode onSubmit={onSubmit} onClose={onClose} /> : null}
+                {action === ActionType.ADD_CHECKLIST ? <FormNode onSubmit={onSubmit} /> : null}
             </div>
             <ReactFlow
                 elements={elements as FlowElement[]}

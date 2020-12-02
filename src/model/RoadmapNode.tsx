@@ -1,5 +1,7 @@
 import {FlowElement} from 'react-flow-renderer'
 
+import NodeModel from './NodeModel'
+
 export interface RoadMap {
     id: string
     source?: string
@@ -11,7 +13,6 @@ export interface RoadMap {
             title: string
             description?: string
             progress?: number
-            checked?: boolean
             dueDate?: Date
             parent: string
         }
@@ -51,12 +52,12 @@ export const findParentById = (id: string, elements: RoadMapNode[]): RoadMapNode
 }
 
 export const filterCompletedChildren = (parentId: string) => (child: RoadMapNode): boolean => {
-    if (child.data && child.data.value.checked) return child.id !== parentId
+    if (child.data && child.data.value.progress === 100) return child.id !== parentId
     else return false
 }
 
 export const filterChildrenProgress = (parentId: string) => (child: RoadMapNode): boolean => {
-    if (child.data && child.data.value.progress) return child.id !== parentId && !child.data.value.checked
+    if (child.data && child.data.value.progress) return child.id !== parentId && !(child.data.value.progress === 100)
     else return false
 }
 
@@ -114,14 +115,36 @@ export const filterMyRightSide = (x: number) => (element: RoadMapNode): boolean 
 export const filterMyLeftSide = (x: number) => (element: RoadMapNode): boolean =>
     Boolean(element.position && element.position.x < x)
 
-export const mapToModel = (node: RoadMapNode): any => {
-    return {
-        id: node.id,
-        description: node.data?.value.description || '',
-        progress: node.data?.value.progress || 0,
-        roadmapId: 1,
-        source: node.source,
-        target: node.target,
-        title: node.data?.value.title || 'untitled',
-    }
+export const reduceToModel = (nodeList: NodeModel[], node: RoadMapNode): NodeModel[] => {
+    if (node.id.includes('-')) return nodeList
+    return [
+        ...nodeList,
+        {
+            id: node.id,
+            description: node.data?.value.description || '',
+            parent: '1',
+            progress: node.data?.value.progress || 0,
+            roadmapId: 1,
+            title: node.data?.value.title || 'untitled',
+            dueDate: node.data?.value.dueDate,
+        },
+    ]
+}
+
+export const convertToModel = (nodeList: RoadMap[]): NodeModel[] => {
+    const finalNode: NodeModel[] = []
+    nodeList.forEach((node) => {
+        if (!node.id.includes('-')) {
+            finalNode.push({
+                parent: findParentById(node.id, nodeList)?.id || '0',
+                description: node.data?.value.description || '',
+                progress: node.data?.value.progress || 0,
+                roadmapId: 1,
+                title: node.data?.value.title || '',
+                dueDate: node.data?.value.dueDate,
+                id: node.id,
+            })
+        }
+    })
+    return finalNode
 }

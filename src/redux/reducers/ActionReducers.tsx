@@ -19,7 +19,7 @@ export const actionReducers: Reducer<ActionState, ActionDispatchAction> = (
         case ActionTypes.SET_ACTION: {
             return {
                 ...state,
-                activePage: action.payload.action || state.action,
+                action: action.payload.action || state.action,
             }
         }
         default:

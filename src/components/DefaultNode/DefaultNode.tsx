@@ -12,7 +12,6 @@ import './DefaultNode.scss'
 interface DefaultNodeProps {
     title: string
     type: 'GROUP' | 'CHECK' | 'OTHERS'
-    checked?: boolean
     progress?: number
 }
 
@@ -26,7 +25,7 @@ const DefaultNode: React.FC<DefaultNodeProps> = (props: DefaultNodeProps) => {
     }
 
     const renderCheck = (): JSX.Element => {
-        if (props.checked)
+        if (props.progress === 100)
             return <Icons.Check className="my-auto" onClick={(): void => onMenuSelected(ActionType.CHECK)} />
         else return <Icons.Uncheck className="my-auto" onClick={(): void => onMenuSelected(ActionType.CHECK)} />
     }
@@ -40,7 +39,7 @@ const DefaultNode: React.FC<DefaultNodeProps> = (props: DefaultNodeProps) => {
                     </div>
                     {props.type === 'CHECK' ? (
                         <input
-                            checked={props.checked}
+                            checked={props.progress === 100}
                             onChange={(): void => onMenuSelected(ActionType.CHECK)}
                             className="check form-control"
                             type="checkbox"

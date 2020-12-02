@@ -1,4 +1,5 @@
 const ActionType = {
+    STAND_BY: 'STAND_BY',
     DETAIL: 'DETAIL',
     ADD_CHECKLIST: 'ADD_CHECKLIST',
     COLLAPSE: 'COLLAPSE',
