@@ -30,6 +30,8 @@ import {
     findParentEdge,
     getAllChildren,
     getAllChildrenId,
+    getFirstNeighbor,
+    moveNode,
     RoadMapNode,
 } from '../../model/RoadmapNode'
 import NodeModel, {convertNodeToFlow} from '../../model/NodeModel'
@@ -56,9 +58,12 @@ const Home: React.FC = () => {
     const [showModal, setShowModal] = useState(false)
 
     const clearAction = (): void => {
+        console.log('CLEAR ACTION')
         setShowModal(false)
         dispatch(updateAction(ActionType.STAND_BY))
+        console.log('delete element')
         setSelectedElement(undefined)
+        console.log('delete element done')
     }
 
     const onElementsRemove = (elementsToRemove: Elements): void =>
@@ -166,7 +171,6 @@ const Home: React.FC = () => {
         clearAction()
 
         const element = selectedElement as RoadMapNode
-        const exceptSelected = elements.filter((elm) => elm.id !== element.id)
         const children = findChildren(element.id, elements as FlowElement[])
         const completeChildren = children.filter(filterCompletedChildren(element.id))
         const countChildren = children.length
@@ -197,34 +201,63 @@ const Home: React.FC = () => {
         const AbsParse = (id: string): number => Math.abs(parseInt(id, 10))
 
         // find from 0
-        let movedX = 0
+        let movedX = element.position?.x || 0
+        let [moveMe, dist] = [false, 0]
+        const movedNode: RoadMapNode[] = []
         for (let i = 1; i < Infinity; i++) {
             // realZero means one line vertically
-            const realZero = movedX + (element.position?.x || 0)
-            const crashed = elementsExceptEdge.find(findPosition(realZero, newY))
+            const crashed = elementsExceptEdge.find(findPosition(movedX, newY))
             if (crashed) {
                 movedX += WIDTH * i * (i % 2 ? 1 : -1)
                 // find priority
                 // if my id < parent id of detected crash id then I will be prioritized
                 const crashedParent = findParentById(crashed.id, elements)
                 // after found priority then find out prioritized position
-                if (crashedParent && AbsParse(element.id) < AbsParse(crashed.id)) {
-                    movedX += WIDTH
-                    setSelectedElement(crashedParent)
-                    if (parseInt(element.id, 10) < parseInt(crashed.id, 10))
-                        dispatch(updateAction(ActionType.MOVE_RIGHT))
-                    else dispatch(updateAction(ActionType.MOVE_LEFT))
-                } else if (parseInt(element.id, 10) < parseInt(crashed.id, 10))
-                    dispatch(updateAction(ActionType.MOVE_RIGHT))
-                else dispatch(updateAction(ActionType.MOVE_LEFT))
-                // use position to move element
+
+                if (crashedParent && AbsParse(element.id) < AbsParse(crashedParent.id)) {
+                    // move neighbor
+                    console.log('MOVE NEIGHBOR')
+                    if (parseInt(element.id, 10) < parseInt(crashedParent.id, 10)) {
+                        const {neighbor, distance} = getFirstNeighbor(element.id, 'RIGHT', elements)
+                        if (neighbor && distance) {
+                            movedNode.push(...moveNode('RIGHT', distance, neighbor.id, elements))
+                        }
+                        console.log('MOVE RIGHT')
+                    } else {
+                        const {neighbor, distance} = getFirstNeighbor(element.id, 'LEFT', elements)
+                        if (neighbor && distance) {
+                            movedNode.push(...moveNode('LEFT', distance, neighbor.id, elements))
+                        }
+                        console.log('MOVE LEFT')
+                    }
+                } else if (crashedParent && AbsParse(element.id) > AbsParse(crashedParent.id)) {
+                    // move me
+                    console.log('MOVE ME')
+                    if (parseInt(element.id, 10) < parseInt(crashedParent.id, 10)) {
+                        const {neighbor, distance} = getFirstNeighbor(element.id, 'RIGHT', elements)
+                        if (neighbor && distance) {
+                            moveMe = true
+                            if (crashed.position) dist = -1 * Math.abs(movedX - crashed.position.x)
+                            movedNode.push(...moveNode('LEFT', distance, neighbor.id, elements))
+                        }
+                        console.log('MOVE LEFT')
+                    } else {
+                        const {neighbor, distance} = getFirstNeighbor(element.id, 'LEFT', elements)
+                        // clear
+                        if (neighbor && distance) {
+                            moveMe = true
+                            if (crashed.position) dist = Math.abs(movedX - crashed.position.x)
+                            movedNode.push(...moveNode('RIGHT', distance, element.id, elements))
+                        }
+                        console.log('MOVE RIGHT', movedX, crashed.position?.x)
+                    }
+                } else {
+                    console.error('position not detected')
+                }
             } else {
                 i = Infinity
             }
         }
-        movedX += element.position?.x || 0
-
-        const newChildId = `${element.id}.${biggestId}`
 
         // when checklist has a child, it will become a group
         const renewalParent: RoadMapNode = {
@@ -244,38 +277,45 @@ const Home: React.FC = () => {
                     parent: element.data?.value.parent || '',
                 },
             },
+            position: {
+                y: element.position?.y || 0,
+                x: (element.position?.x || 0) + (moveMe ? dist : 0),
+            },
         }
 
+        const newChildId = `${element.id}.${biggestId}`
         const edge = {
             id: `${element.id}-${newChildId}`,
             source: element.id,
             target: newChildId,
         }
 
+        console.log('Moved Node', movedNode)
+        const exceptSelected = elements.filter(
+            (elm) => elm.id !== element.id && !movedNode.find((node) => node.id === elm.id),
+        )
+
+        const newChild = {
+            id: newChildId,
+            data: {
+                label: <DefaultNode type="CHECK" title={value.title} />,
+                value: {
+                    id: renewalParent.id,
+                    title: value.title,
+                    description: value.description,
+                    progress: 0,
+                    parent: renewalParent.id,
+                },
+            },
+            position: {
+                x: movedX,
+                y: newY,
+            },
+        }
+
         if (element) {
             if (action === ActionType.ADD_CHECKLIST) {
-                setElements([
-                    ...exceptSelected,
-                    renewalParent,
-                    {
-                        id: newChildId,
-                        data: {
-                            label: <DefaultNode type="CHECK" title={value.title} />,
-                            value: {
-                                id: renewalParent.id,
-                                title: value.title,
-                                description: value.description,
-                                progress: 0,
-                                parent: renewalParent.id,
-                            },
-                        },
-                        position: {
-                            x: movedX,
-                            y: newY,
-                        },
-                    },
-                    edge,
-                ])
+                setElements([...exceptSelected, renewalParent, newChild, edge])
             }
         } else {
             console.error('Elemenet not found')
@@ -363,6 +403,7 @@ const Home: React.FC = () => {
         // trigger action here
         console.log(selectedElement, action)
         if (selectedElement && action !== '') realAction()
+        else clearAction()
     }, [selectedElement, action])
 
     const onSave = (): void => {

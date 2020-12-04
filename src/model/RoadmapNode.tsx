@@ -148,3 +148,93 @@ export const convertToModel = (nodeList: RoadMap[]): NodeModel[] => {
     })
     return finalNode
 }
+
+const findFirstDescent = (id: string, allNode: RoadMapNode[]): RoadMapNode | null => {
+    const parent = findParentById(id, allNode)
+    if (parent && !findParentById(parent.id, allNode)) {
+        return parent
+    } else if (parent) {
+        return findFirstDescent(parent?.id, allNode)
+    } else {
+        return null
+    }
+}
+
+const xTarget = (myX: number, nodeX: number, where: string): boolean => {
+    switch (where) {
+        case 'LEFT':
+            return myX > nodeX
+        case 'RIGHT':
+            return myX < nodeX
+        default:
+            return true
+    }
+}
+
+const filterNeighbor = (from: 'LEFT' | 'RIGHT' | 'ALL', y: number, x = 0) => (node: RoadMapNode): boolean => {
+    return Boolean(node.position && node.position.y === y && xTarget(x, node.position.x, from))
+}
+
+const sortNodeByX = (firstNode: RoadMapNode, secondNode: RoadMapNode): number => {
+    if (firstNode.position && secondNode.position) {
+        return firstNode.position.x - secondNode.position.x
+    } else {
+        return 0
+    }
+}
+
+export const getFirstNeighbor = (
+    id: string,
+    from: 'LEFT' | 'RIGHT',
+    allNode: RoadMapNode[],
+): {neighbor?: RoadMapNode; distance?: number} => {
+    const node = allNode.find((nd) => nd.id === id)
+    if (node && node.position) {
+        const neighbor = allNode.filter(filterNeighbor(from, node.position.y, node.position.x))
+        if (neighbor.length > 0) {
+            neighbor.sort(sortNodeByX)
+            if (neighbor[0].position) {
+                const distance = Math.abs(neighbor[0].position.x - node.position.x)
+                return {
+                    neighbor: neighbor[0],
+                    distance,
+                }
+            }
+        }
+    }
+    return {}
+}
+
+export const moveNode = (to: 'LEFT' | 'RIGHT', distance: number, id: string, allNode: RoadMapNode[]): RoadMapNode[] => {
+    const x = distance * (to === 'LEFT' ? -1 : 1)
+    const coreNode = findFirstDescent(id, allNode)
+    if (coreNode && coreNode.position) {
+        const neighbor = allNode.filter(filterNeighbor(to, coreNode.position.y, coreNode.position.x))
+        const movedNode: RoadMapNode[] = []
+        for (const node of neighbor) {
+            if (node.position) {
+                movedNode.push({
+                    ...node,
+                    position: {
+                        x: node.position.x + x,
+                        y: node.position.y,
+                    },
+                })
+            }
+            const children = getAllChildren(node.id, [], allNode, false)
+            for (const child of children) {
+                if (child.position) {
+                    movedNode.push({
+                        ...child,
+                        position: {
+                            x: child.position.x + x,
+                            y: child.position.y,
+                        },
+                    })
+                }
+            }
+        }
+        return movedNode
+    }
+    return []
+}

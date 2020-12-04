@@ -74,7 +74,7 @@ export const generateChild = (
                                 },
                             },
                             position: {
-                                x: parentX + i * 260,
+                                x: parentX + Math.round(i / 2) * 260 * (i % 2 === 0 ? -1 : 1),
                                 y: parentLevel * 140,
                             },
                         },
@@ -86,28 +86,6 @@ export const generateChild = (
                 ),
             )
             .reduce((container, current) => [...container, ...current], [])
-        // } else if (parent && !currentChildList.find((node) => node.id === parent.id)) {
-        //     return [
-        //         ...currentChildList,
-        //         {
-        //             id: parent.id,
-        //             data: {
-        //                 label: <div>No Child {parent.title}</div>,
-        //                 value: {
-        //                     id: parent.id,
-        //                     parent: parentId,
-        //                     title: parent.title,
-        //                     description: parent.description,
-        //                     dueDate: parent.dueDate,
-        //                     progress: parent.progress,
-        //                 },
-        //             },
-        //             position: {
-        //                 x: 260,
-        //                 y: parentLevel * 140,
-        //             },
-        //         },
-        //     ]
     } else {
         return currentChildList
     }
@@ -115,7 +93,7 @@ export const generateChild = (
 
 export const convertNodeToFlow = (nodeList: NodeModel[]): RoadMapNode[] => {
     const roadmapList: RoadMapNode[] = []
-
+    nodeList.sort((first, second) => first.progress - second.progress)
     const grandParent = nodeList.find(findNodeById('1'))
     if (grandParent) {
         roadmapList.push({
@@ -140,5 +118,10 @@ export const convertNodeToFlow = (nodeList: NodeModel[]): RoadMapNode[] => {
         generateChild([], nodeList, grandParent.id).forEach((node) => roadmapList.push(node))
     }
 
-    return roadmapList
+    return roadmapList.reduce((container: RoadMapNode[], current) => {
+        if (!container.find((con) => con.id === current.id)) {
+            container.push(current)
+        }
+        return container
+    }, [])
 }
